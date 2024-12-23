@@ -13,7 +13,6 @@ import ScrollToTop from './components/ScrollToTop'
 import Search from './pages/Search'
 
 
-
 const App = () => {
 
   const [filters, setFilters] = useState({

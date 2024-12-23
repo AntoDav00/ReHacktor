@@ -132,6 +132,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/fa73c65f-056a-47c1-93c9-713649163192/deploy-status)](https://app.netlify.com/sites/rehacktor/deploys)
 
+- **Link:** [Rehacktor](https://rehacktor.netlify.app/) 
+
 ---
 
 <div align="center">

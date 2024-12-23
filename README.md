@@ -128,9 +128,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **GitHub:** [Antonio](https://https://bit.ly/GitAntoDav)
 - **LinkedIn:** [Antonio](https://bit.ly/LinkedinAntonio)
 
+## 📌 Deployment
+
+[![Netlify Status](https://api.netlify.com/api/v1/badges/529e960d-2c78-4875-9fc6-07aa9baf8c20/deploy-status)](https://app.netlify.com/sites/rehacktor/deploys)
+
 ---
 
 <div align="center">
   Made with ❤️ by <strong>Antonio D'Aversa</strong><br>
   <sup>© 2024 Rehacktor. All rights reserved.</sup>
 </div>
+
+

@@ -12,31 +12,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import ScrollToTop from './components/ScrollToTop'
 import Search from './pages/Search'
 
-//! Firebase
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAWguBF2IAL6eRa_VzTm4fy_OvhyDqDHqI",
-  authDomain: "reacktor-a1b6a.firebaseapp.com",
-  databaseURL: "https://reacktor-a1b6a-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "reacktor-a1b6a",
-  storageBucket: "reacktor-a1b6a.firebasestorage.app",
-  messagingSenderId: "833618544477",
-  appId: "1:833618544477:web:9c03b416e859ac5a5e4ab4",
-  measurementId: "G-0PLNGXX5HG"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-//!Fine Firebase
 
 const App = () => {
 

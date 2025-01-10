@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-unused-vars
-import React, { useState, lazy, Suspense } from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar/Navbar'
 import { AuthProvider } from './contexts/AuthContext'
@@ -7,16 +7,16 @@ import ScrollToTop from './components/ScrollToTop'
 import PrivateRoute from './components/Auth/PrivateRoute'
 import { Toaster } from 'react-hot-toast'
 
-// Lazy load pages
-const Home = lazy(() => import('./pages/Home'))
-const GameDetails = lazy(() => import('./pages/GameDetails'))
-const Categories = lazy(() => import('./pages/Categories'))
-const Login = lazy(() => import('./components/Auth/Login'))
-const Signup = lazy(() => import('./components/Auth/Signup'))
-const Favorites = lazy(() => import('./pages/Favorites'))
-const Search = lazy(() => import('./pages/Search'))
-const Profile = lazy(() => import('./pages/Profile'))
-const Settings = lazy(() => import('./pages/Settings'))
+// Import pages directly
+import Home from './pages/Home'
+import GameDetails from './pages/GameDetails'
+import Categories from './pages/Categories'
+import Login from './components/Auth/Login'
+import Signup from './components/Auth/Signup'
+import Favorites from './pages/Favorites'
+import Search from './pages/Search'
+import Profile from './pages/Profile'
+import Settings from './pages/Settings'
 
 // Import CSS
 import 'slick-carousel/slick/slick.css';
@@ -66,28 +66,26 @@ const App = () => {
         <div className="min-h-screen bg-gray-900 text-white">
           <Navbar onResetFilters={resetFilters} />
           <main className="container mx-auto px-4 py-8">
-            <Suspense fallback={null}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/game/:id" element={<GameDetails />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/search/:query" element={<Search />} />
-                <Route path="/categories" element={<Categories />} />
-                <Route path="/favorites" element={<Favorites />} />
-                <Route path="/profile" element={
-                  <PrivateRoute>
-                    <Profile />
-                  </PrivateRoute>
-                } />
-                <Route path="/settings" element={
-                  <PrivateRoute>
-                    <Settings />
-                  </PrivateRoute>
-                } />
-                <Route path="/login" element={<Login redirect="/" />} />
-                <Route path="/signup" element={<Signup redirect="/" />} />
-              </Routes>
-            </Suspense>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/game/:id" element={<GameDetails />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/search/:query" element={<Search />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/favorites" element={<Favorites />} />
+              <Route path="/profile" element={
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              } />
+              <Route path="/settings" element={
+                <PrivateRoute>
+                  <Settings />
+                </PrivateRoute>
+              } />
+              <Route path="/login" element={<Login redirect="/" />} />
+              <Route path="/signup" element={<Signup redirect="/" />} />
+            </Routes>
           </main>
         </div>
       </BrowserRouter>

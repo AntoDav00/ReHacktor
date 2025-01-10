@@ -42,29 +42,26 @@ const Login = () => {
   }
 
   const handleGithubLogin = async () => {
-    // Check for online status
-    if (!navigator.onLine) {
-      throw new Error('No internet connection. Please check your network and try again.')
-    }
     try {
       setError('')
       setLoading(true)
-      await loginWithGithub()
-      logger.info('GitHub login attempt completed'); // Debug log
-
-      Navigate('/')
-
-    } catch (error) {
-      if (error.code === 'auth/popup-blocked') {
-        setError('Popup was blocked. Please allow popups for this site.')
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        setError('Login was cancelled.')
-      } else if (error.code === 'auth/network-request-failed') {
-        setError('Network error. Please check your connection and try again.')
-      } else {
-        setError('Failed to sign in with GitHub: ' + error.message)
+      // Explicitly check online status
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network and try again.')
       }
-      logger.error('GitHub login error:', error);
+      
+      // Add a timeout to prevent hanging
+      const loginResult = await Promise.race([
+        loginWithGithub(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Login timeout')), 10000)
+        )
+      ]);
+      
+      Navigate('/')
+    } catch (error) {
+      console.error('GitHub Login Error:', error);
+      setError(`Failed to sign in with GitHub: ${error.message}`);
     } finally {
       setLoading(false)
     }

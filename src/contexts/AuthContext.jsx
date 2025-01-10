@@ -33,16 +33,28 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    }, (error) => {
-      console.error('Auth State Change Error:', error);
-      setLoading(false);
-    });
+    const unsubscribe = onAuthStateChanged(
+      auth, 
+      (currentUser) => {
+        setUser(currentUser);
+        setLoading(false);
+      }, 
+      (error) => {
+        console.error('Detailed Auth State Change Error:', {
+          code: error.code,
+          message: error.message,
+          stack: error.stack
+        });
+        setLoading(false);
+      }
+    );
 
     // Cleanup subscription on unmount
-    return () => unsubscribe();
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   async function signup(email, password, username) {

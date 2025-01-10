@@ -19,6 +19,7 @@ import {
   reauthenticateWithCredential,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail
 } from 'firebase/auth'
+import { ImSpinner9 } from 'react-icons/im';
 
 const provider = new GithubAuthProvider();
 const AuthContext = createContext()
@@ -30,6 +31,20 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    }, (error) => {
+      console.error('Auth State Change Error:', error);
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
   async function signup(email, password, username) {
     try {
       const auth = getAuth();
@@ -51,18 +66,16 @@ export function AuthProvider({ children }) {
   async function loginWithGithub() {
     try {
       const auth = getAuth();
-      const result = signInWithPopup(auth, provider)
-      const user = result.user;
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
     } catch (error) {
-      // Handle Errors here.
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      // The email of the user's account used.
-      const email = error.customData.email;
-      // The AuthCredential type that was used.
-      const credential = GithubAuthProvider.credentialFromError(error);
-      // ...
-    };
+      console.error('GitHub Login Error:', {
+        code: error.code,
+        message: error.message,
+        email: error.customData?.email
+      });
+      throw error;
+    }
   }
 
   const login = (email, password) => {
@@ -107,18 +120,6 @@ export function AuthProvider({ children }) {
     }
   }
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      // Non settare automaticamente lo stato
-      if (currentUser) {
-        setUser(currentUser);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [])
-
   const value = {
     user,
     loading,
@@ -128,13 +129,20 @@ export function AuthProvider({ children }) {
     logout,
     updateUserProfile,
     changePassword,
-    sendPasswordResetEmail,
-    isGithubUser: user?.providerData[0]?.providerId === 'github.com'
+    sendPasswordResetEmail
   }
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {loading ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+          <div className="animate-spin text-6xl text-blue-500">
+            <ImSpinner9 />
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   )
 

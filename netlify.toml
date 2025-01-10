@@ -11,7 +11,7 @@
   [headers.values]
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
-    Content-Security-Policy = "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://identitytoolkit.googleapis.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.rawg.io https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://rehacktor.netlify.app"
+    Content-Security-Policy = "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://identitytoolkit.googleapis.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.rawg.io https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://rehacktor.netlify.app"
 
 [[redirects]]
   from = "/*"

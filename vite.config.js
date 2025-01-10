@@ -36,7 +36,16 @@ export default defineConfig(({ mode }) => {
       'process.env.VITE_FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID),
     },
     plugins: [
-      react(),
+      react({
+        // Configura il plugin React per gestire meglio i blob
+        babel: {
+          plugins: [
+            ['@babel/plugin-transform-react-jsx', {
+              runtime: 'automatic'
+            }]
+          ]
+        }
+      }),
       imagemin({
         gifsicle: {
           optimizationLevel: 7,

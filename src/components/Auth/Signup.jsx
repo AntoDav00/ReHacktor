@@ -23,11 +23,12 @@ const Signup = () => {
     try {
       setError('')
       setLoading(true)
-      const result = await signup(email, password, username)
-      console.log('Signup result:', result) // Debug log
-      if (result && result.user) {
-        Navigate('/', { replace: true })
-      }
+      await signup(email, password, username)
+      
+      // Imposta il flag globale per il caricamento iniziale dei giochi
+      localStorage.setItem('gamesInitialLoad', 'true')
+      
+      Navigate('/', { replace: true })
     } catch (error) {
       setError('Failed to create an account: ' + error.message)
     } finally {

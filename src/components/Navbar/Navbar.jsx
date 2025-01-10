@@ -1,29 +1,36 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AutoCompleteCardUi from '../AutoCompleteCardUi'
 import { FaGamepad } from 'react-icons/fa'
 import logger from '../../utils/logger';
 
-
 const Navbar = ({ onResetFilters }) => {
   const navigate = useNavigate()
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(() => false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { user, logout } = useAuth()
+  
+  // Usa l'username dal signup o un fallback
+  const username = user?.displayName || user?.email?.split('@')[0] || 'User'
 
-  // Get username from email
-  const username = user?.email?.split('@')[0] || ''
+  // Immagine di default per l'avatar
+  const defaultAvatar = user 
+    ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` 
+    : 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
+
+  useEffect(() => {
+    // Chiudi il dropdown quando cambia l'utente
+    setIsOpen(false);
+  }, [user])
 
   const handleLogout = async () => {
     try {
       await logout()
-      setIsOpen(false)
-      setIsMobileMenuOpen(false)
+      // La pagina verrà ricaricata dal metodo di logout
     } catch (error) {
-      logger.error('Failed to log out:', error);
-
+      logger.error('Logout fallito:', error);
     }
   }
 
@@ -34,8 +41,7 @@ const Navbar = ({ onResetFilters }) => {
     navigate('/');
 
     setTimeout(() => {
-      window.location.reload();
-
+      setIsLoading(false);
     }, 500);
   };
 
@@ -49,8 +55,6 @@ const Navbar = ({ onResetFilters }) => {
       </div>
     );
   }
-
-
 
   return (
     <nav className="bg-gray-800/50 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-700">
@@ -81,22 +85,63 @@ const Navbar = ({ onResetFilters }) => {
               <div className="relative">
                 <button
                   onClick={() => setIsOpen(!isOpen)}
-                  className="hover:text-purple-400 transition-colors"
+                  className="flex items-center space-x-2 text-white hover:text-purple-400 transition-colors duration-200"
                 >
-                  {user.displayName || username}
+                  {/* Avatar con immagine default */}
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800">
+                    <img 
+                      src={user?.photoURL || defaultAvatar} 
+                      alt={username}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = defaultAvatar
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium">{username}</span>
+                  <svg
+                    className={`w-5 h-5 transition-transform duration-200 ${
+                      isOpen ? 'transform rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 </button>
 
+                {/* Dropdown menu */}
                 {isOpen && (
-                  <div className="absolute right-0 mt-2 w-64 py-2 bg-gray-800 rounded-lg shadow-xl border border-gray-700">
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-700">
-                      <p className="font-medium">{username}</p>
-                      <p className="text-sm text-gray-400">{user.email}</p>
+                      <p className="font-medium text-white truncate">{username}</p>
+                      <p className="text-sm text-gray-400 truncate">{user.email}</p>
                     </div>
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsOpen(false)}
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors duration-200"
+                    >
+                      Profile
+                    </Link>
+                    <Link
+                      to="/settings"
+                      onClick={() => setIsOpen(false)}
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors duration-200"
+                    >
+                      Settings
+                    </Link>
                     <button
                       onClick={handleLogout}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-700 text-red-400"
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors duration-200"
                     >
-                      Sign Out
+                      Logout
                     </button>
                   </div>
                 )}
@@ -104,7 +149,7 @@ const Navbar = ({ onResetFilters }) => {
             ) : (
               <Link
                 to="/login"
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-colors text-white font-bold"
               >
                 Login
               </Link>
@@ -161,7 +206,7 @@ const Navbar = ({ onResetFilters }) => {
               ) : (
                 <Link
                   to="/login"
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-center"
+                  className="px-4 py-2 bg-orange-500 hover:bg-orange-700 rounded-lg transition-colors text-white font-bold"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Login
@@ -175,4 +220,4 @@ const Navbar = ({ onResetFilters }) => {
   )
 }
 
-export default Navbar 
+export default Navbar

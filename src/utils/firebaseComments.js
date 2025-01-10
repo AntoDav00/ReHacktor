@@ -3,7 +3,6 @@ import {
   collection,
   addDoc,
   query,
-  where,
   orderBy,
   getDocs,
   deleteDoc,
@@ -26,14 +25,9 @@ export const addComment = async (userId, gameId, comment) => {
   }
 };
 
-export const getComments = async (gameId) => {
+export const getComments = async () => {
   try {
-    const q = query(
-      collection(db, 'comments'),
-      where('gameId', '==', gameId),
-      orderBy('createdAt', 'desc')
-    );
-
+    const q = query(collection(db, 'comments'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,

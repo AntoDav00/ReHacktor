@@ -16,6 +16,16 @@ A modern game discovery platform built with React and powered by the RAWG API, o
 - Comment system for game discussions 💬
 - Custom user profiles 👤
 - Protected routes for user-specific features 🛡️
+- Password reset functionality via email 🔑
+- Forgot password link in login page 🔒
+
+### 🌟 Profile & Settings Features
+- Comprehensive user profile dashboard 📊
+- Game statistics and play history tracking 🎮
+- Personalized avatar generation 🖼️
+- Privacy and notification settings 🔔
+- Password strength meter 🔒
+- Account customization options 🛠️
 
 ### 🎨 UI/UX Features
 - Responsive design for all devices 📱
@@ -132,7 +142,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/fa73c65f-056a-47c1-93c9-713649163192/deploy-status)](https://app.netlify.com/sites/rehacktor/deploys)
 
-- **Link:** [Rehacktor](https://rehacktor.netlify.app/) 
+- **Link:** [Rehacktor](https://rehacktor.netlify.app/)
 
 ---
 
@@ -140,5 +150,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   Made with ❤️ by <strong>Antonio D'Aversa</strong><br>
   <sup>© 2024 Rehacktor. All rights reserved.</sup>
 </div>
-
-

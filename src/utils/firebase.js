@@ -74,4 +74,4 @@ export const checkIsFavorite = async (userId, gameId) => {
     console.error('Error checking favorite:', error);
     throw error;
   }
-}; 
+};

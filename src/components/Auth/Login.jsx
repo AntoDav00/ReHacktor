@@ -4,13 +4,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { FaEnvelope, FaLock, FaGamepad, FaGithub } from 'react-icons/fa'
 import logger from '../../utils/logger';
 
-
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login, loginWithGithub } = useAuth()
+  const { login, loginWithGithub, sendPasswordResetEmail } = useAuth()
   const Navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -24,6 +23,22 @@ const Login = () => {
       setError('Failed to sign in: ' + error.message)
     }
     setLoading(false)
+  }
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError('Please enter your email address first')
+      return
+    }
+    try {
+      setLoading(true)
+      await sendPasswordResetEmail(email)
+      setError('Password reset email sent. Check your inbox.')
+    } catch (error) {
+      setError('Failed to send password reset email: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGithubLogin = async () => {
@@ -73,7 +88,7 @@ const Login = () => {
 
         {/* Error Alert */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-xl text-sm text-center">
+          <div className={`${error.includes('sent') ? 'bg-green-500/10 border-green-500/50 text-green-400' : 'bg-red-500/10 border-red-500/50 text-red-400'} border p-4 rounded-xl text-sm text-center`}>
             {error}
           </div>
         )}
@@ -154,11 +169,10 @@ const Login = () => {
                 'Sign In'
               )}
             </button>
-          </div>
-        </form>
+
 
         {/* Sign Up Link */}
-        <p className="text-center text-sm text-gray-400">
+        <p className="text-center text-sm text-gray-400 pt-5">
           Don&apos;t have an account?{' '}
           <Link
             to="/signup"
@@ -167,9 +181,22 @@ const Login = () => {
             Sign up for free
           </Link>
         </p>
+            {/* Forgot Password Link */}
+            <p className="text-center text-sm text-gray-400 mt-1">
+              Forgot Password?{' '}
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                className="font-medium text-red-400 hover:text-red-300 transition-colors duration-200"
+              >
+                Click here
+              </button>
+            </p>
+          </div>
+        </form>
       </div>
     </div>
   )
 }
 
-export default Login 
+export default Login

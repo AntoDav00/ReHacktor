@@ -11,7 +11,12 @@ import Favorites from './pages/Favorites'
 import { AuthProvider } from './contexts/AuthContext'
 import ScrollToTop from './components/ScrollToTop'
 import Search from './pages/Search'
-
+import Profile from './pages/Profile'
+import Settings from './pages/Settings'
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
+import PrivateRoute from './components/Auth/PrivateRoute'; 
+import { Toaster } from 'react-hot-toast';
 
 const App = () => {
 
@@ -33,16 +38,48 @@ const App = () => {
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+            success: {
+              iconTheme: {
+                primary: '#4ade80',
+                secondary: '#333',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#333',
+              },
+            },
+          }}
+        />
         <div className="min-h-screen bg-gray-900 text-white">
           <Navbar onResetFilters={resetFilters} />
           <main className="container mx-auto px-4 py-8">
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/game/:id" element={<GameDetails />} />
               <Route path="/search" element={<Search />} />
               <Route path="/search/:query" element={<Search />} />
-              <Route path="/game/:id" element={<GameDetails />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/favorites" element={<Favorites />} />
+              <Route path="/profile" element={
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              } />
+              <Route path="/settings" element={
+                <PrivateRoute>
+                  <Settings />
+                </PrivateRoute>
+              } />
               <Route path="/login" element={<Login redirect="/" />} />
               <Route path="/signup" element={<Signup redirect="/" />} />
             </Routes>

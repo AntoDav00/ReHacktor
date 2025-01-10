@@ -3,21 +3,25 @@ import { FaHeart } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import { toggleFavorite, checkIsFavorite } from '../utils/firebase'
 
-const FavoriteButton = ({ game }) => {
+const FavoriteButton = ({ userId, gameId }) => {
   const [isFavorite, setIsFavorite] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { user } = useAuth()
 
   useEffect(() => {
-    const checkFavoriteStatus = async () => {
-      if (user) {
-        const status = await checkIsFavorite(user.uid, game.id)
-        setIsFavorite(status)
+    const fetchFavoriteStatus = async () => {
+      if (userId && gameId) {
+        try {
+          const favoriteStatus = await checkIsFavorite(userId, gameId)
+          setIsFavorite(favoriteStatus)
+        } catch (error) {
+          console.error('Error checking favorite:', error)
+        }
       }
     }
 
-    checkFavoriteStatus()
-  }, [user, game.id])
+    fetchFavoriteStatus()
+  }, [userId, gameId])
 
   const handleToggleFavorite = async (e) => {
     e.preventDefault() // Prevent navigation if used in a Link

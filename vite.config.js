@@ -6,20 +6,34 @@ import imagemin from 'vite-plugin-imagemin'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
-  // Log environment variables for debugging
-  console.log('Environment Variables:', {
-    VITE_FIREBASE_API_KEY: env.VITE_FIREBASE_API_KEY ? 'Present' : 'Missing',
-    VITE_FIREBASE_AUTH_DOMAIN: env.VITE_FIREBASE_AUTH_DOMAIN ? 'Present' : 'Missing',
-    VITE_FIREBASE_PROJECT_ID: env.VITE_FIREBASE_PROJECT_ID ? 'Present' : 'Missing',
-    VITE_FIREBASE_STORAGE_BUCKET: env.VITE_FIREBASE_STORAGE_BUCKET ? 'Present' : 'Missing',
-    VITE_FIREBASE_MESSAGING_SENDER_ID: env.VITE_FIREBASE_MESSAGING_SENDER_ID ? 'Present' : 'Missing',
-    VITE_FIREBASE_APP_ID: env.VITE_FIREBASE_APP_ID ? 'Present' : 'Missing',
-    VITE_RAWG_API_KEY: env.VITE_RAWG_API_KEY ? 'Present' : 'Missing'
-  })
+  // Validate required environment variables
+  const requiredEnvVars = [
+    'VITE_FIREBASE_API_KEY',
+    'VITE_FIREBASE_AUTH_DOMAIN',
+    'VITE_FIREBASE_PROJECT_ID',
+    'VITE_FIREBASE_STORAGE_BUCKET',
+    'VITE_FIREBASE_MESSAGING_SENDER_ID',
+    'VITE_FIREBASE_APP_ID',
+    'VITE_RAWG_API_KEY'
+  ]
+
+  const missingEnvVars = requiredEnvVars.filter(varName => !env[varName])
+  
+  if (missingEnvVars.length > 0) {
+    console.error('Missing environment variables:', missingEnvVars)
+    // Uncomment the next line to stop the build if env vars are missing
+    // throw new Error(`Missing environment variables: ${missingEnvVars.join(', ')}`)
+  }
 
   return {
     define: {
       __APP_ENV__: JSON.stringify(env.APP_ENV),
+      'process.env.VITE_FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY),
+      'process.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN),
+      'process.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(env.VITE_FIREBASE_PROJECT_ID),
+      'process.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(env.VITE_FIREBASE_STORAGE_BUCKET),
+      'process.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+      'process.env.VITE_FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID),
     },
     plugins: [
       react(),

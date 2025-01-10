@@ -13,10 +13,23 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 }
 
-const app = initializeApp(firebaseConfig)
-export const auth = getAuth(app)
-export const db = getFirestore(app)
-export const storage = getStorage(app)
+console.log('Firebase Config:', {
+    apiKey: firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 5) + '...' : 'Missing',
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+});
 
-// GitHub provider
-export const githubProvider = new GithubAuthProvider()
+try {
+    const app = initializeApp(firebaseConfig)
+    console.log('Firebase App Initialized Successfully')
+    
+    export const auth = getAuth(app)
+    export const db = getFirestore(app)
+    export const storage = getStorage(app)
+
+    // GitHub provider
+    export const githubProvider = new GithubAuthProvider()
+} catch (error) {
+    console.error('Firebase Initialization Error:', error)
+    throw error
+}

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { FaStar, FaHeart } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import { getFavorites } from '../utils/firebase'
-import LoadingSkeleton from '../components/Features/LoadingSkeleton'
+import Loader from '../components/Loader'
 
 const Favorites = () => {
   const [favorites, setFavorites] = useState([])
@@ -45,7 +45,7 @@ const Favorites = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[1, 2, 3].map((n) => (
-          <LoadingSkeleton key={n} type="card" />
+          <Loader key={n} />
         ))}
       </div>
     )
@@ -108,4 +108,4 @@ const Favorites = () => {
   )
 }
 
-export default Favorites 
+export default Favorites

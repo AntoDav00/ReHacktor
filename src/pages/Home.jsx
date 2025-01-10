@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { FaArrowRight, FaGamepad, FaFilter } from 'react-icons/fa'
 import { motion } from 'framer-motion'
 import InfiniteScroll from '../components/Features/InfiniteScroll'
-import LoadingSkeleton from '../components/Features/LoadingSkeleton'
+import Loader from '../components/Loader'
 import GameCard from '../components/Game/GameCard'
 
 
@@ -118,13 +118,7 @@ const Home = () => {
   }
 
   if (loading && games.length === 0) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[1, 2, 3, 4, 5, 6].map((n) => (
-          <LoadingSkeleton key={n} type="card" />
-        ))}
-      </div>
-    )
+    return <Loader />
   }
 
   return (
@@ -210,8 +204,8 @@ const Home = () => {
 
       <InfiniteScroll loadMore={loadMore} hasMore={hasMore} loading={loading}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {games.map((game) => (
-            <GameCard key={game.id} game={game} />
+          {games.map((game, index) => (
+            <GameCard key={index} game={game} />
           ))}
         </div>
       </InfiniteScroll>

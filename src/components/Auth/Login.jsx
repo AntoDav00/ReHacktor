@@ -21,8 +21,10 @@ const Login = () => {
       Navigate('/')
     } catch (error) {
       setError('Failed to sign in: ' + error.message)
+      logger.error('Login error:', error)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const handlePasswordReset = async () => {
@@ -36,32 +38,52 @@ const Login = () => {
       setError('Password reset email sent. Check your inbox.')
     } catch (error) {
       setError('Failed to send password reset email: ' + error.message)
+      logger.error('Password reset error:', error)
     } finally {
       setLoading(false)
     }
   }
 
   const handleGithubLogin = async () => {
+    // Verifica connessione online
+    if (!navigator.onLine) {
+      setError('No internet connection. Please check your network.')
+      return
+    }
+
     try {
       setError('')
       setLoading(true)
-      // Explicitly check online status
-      if (!navigator.onLine) {
-        throw new Error('No internet connection. Please check your network and try again.')
-      }
       
-      // Add a timeout to prevent hanging
+      // Timeout per il login GitHub
       const loginResult = await Promise.race([
         loginWithGithub(),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Login timeout')), 10000)
+          setTimeout(() => reject(new Error('Login timeout. Please try again.')), 10000)
         )
       ]);
       
       Navigate('/')
     } catch (error) {
-      console.error('GitHub Login Error:', error);
-      setError(`Failed to sign in with GitHub: ${error.message}`);
+      let errorMessage = 'Failed to sign in with GitHub'
+      
+      // Gestione errori specifici
+      switch(error.code) {
+        case 'auth/popup-blocked':
+          errorMessage = 'Popup blocked. Please allow popups for this site.'
+          break
+        case 'auth/popup-closed-by-user':
+          errorMessage = 'Login was cancelled.'
+          break
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your connection.'
+          break
+        default:
+          errorMessage += `: ${error.message}`
+      }
+      
+      setError(errorMessage)
+      logger.error('GitHub Login Error:', error)
     } finally {
       setLoading(false)
     }
@@ -83,9 +105,14 @@ const Login = () => {
           </p>
         </div>
 
-        {/* Error Alert */}
+        {/* Error/Success Alert */}
         {error && (
-          <div className={`${error.includes('sent') ? 'bg-green-500/10 border-green-500/50 text-green-400' : 'bg-red-500/10 border-red-500/50 text-red-400'} border p-4 rounded-xl text-sm text-center`}>
+          <div className={`
+            ${error.includes('sent') || error.includes('success') 
+              ? 'bg-green-500/10 border-green-500/50 text-green-400' 
+              : 'bg-red-500/10 border-red-500/50 text-red-400'} 
+            border p-4 rounded-xl text-sm text-center
+          `}>
             {error}
           </div>
         )}
@@ -154,6 +181,18 @@ const Login = () => {
             </div>
           </div>
 
+          {/* Password Reset Link */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handlePasswordReset}
+              disabled={loading}
+              className="text-sm text-purple-400 hover:text-purple-300 transition-colors duration-200"
+            >
+              Forgot password?
+            </button>
+          </div>
+
           <div>
             <button
               type="submit"
@@ -166,10 +205,11 @@ const Login = () => {
                 'Sign In'
               )}
             </button>
-
+          </div>
+        </form>
 
         {/* Sign Up Link */}
-        <p className="text-center text-sm text-gray-400 pt-5">
+        <p className="text-center text-sm text-gray-400">
           Don&apos;t have an account?{' '}
           <Link
             to="/signup"
@@ -178,19 +218,6 @@ const Login = () => {
             Sign up for free
           </Link>
         </p>
-            {/* Forgot Password Link */}
-            <p className="text-center text-sm text-gray-400 mt-1">
-              Forgot Password?{' '}
-              <button
-                type="button"
-                onClick={handlePasswordReset}
-                className="font-medium text-red-400 hover:text-red-300 transition-colors duration-200"
-              >
-                Click here
-              </button>
-            </p>
-          </div>
-        </form>
       </div>
     </div>
   )

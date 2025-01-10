@@ -116,44 +116,53 @@ const Comments = ({ gameId }) => {
       )}
 
       <div className="space-y-4">
-        {comments.map((comment) => (
-          <div
-            key={comment.id}
-            className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 p-6 rounded-xl 
-            hover:border-purple-500/50 transition-all duration-300"
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full 
-                flex items-center justify-center text-sm font-bold">
-                  {comment.userEmail[0].toUpperCase()}
-                </div>
-                <div>
-                  <div className="font-medium bg-gradient-to-r from-purple-400 to-pink-400 
-                  bg-clip-text text-transparent">
-                    {comment.userEmail}
+        {comments.map((comment) => {
+          // Aggiungi controlli per prevenire errori
+          if (!comment || !comment.id || !comment.userEmail) return null;
+
+          return (
+            <div
+              key={comment.id}
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 p-6 rounded-xl 
+              hover:border-purple-500/50 transition-all duration-300"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full 
+                  flex items-center justify-center text-sm font-bold">
+                    {comment.userEmail && comment.userEmail.length > 0 
+                      ? comment.userEmail[0].toUpperCase() 
+                      : '?'}
                   </div>
-                  <div className="text-sm text-gray-400">
-                    {new Date(comment.createdAt).toLocaleDateString(undefined, {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                  <div>
+                    <div className="font-medium bg-gradient-to-r from-purple-400 to-pink-400 
+                    bg-clip-text text-transparent">
+                      {comment.userEmail || 'Anonymous'}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {comment.createdAt 
+                        ? new Date(comment.createdAt).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })
+                        : 'Unknown date'}
+                    </div>
                   </div>
                 </div>
+                {user?.email === comment.userId && (
+                  <button
+                    onClick={() => handleDelete(comment.id)}
+                    className="text-gray-400 hover:text-red-400 transition-colors duration-300"
+                  >
+                    <FaTrash className="text-sm" />
+                  </button>
+                )}
               </div>
-              {user?.email === comment.userId && (
-                <button
-                  onClick={() => handleDelete(comment.id)}
-                  className="text-gray-400 hover:text-red-400 transition-colors duration-300"
-                >
-                  <FaTrash className="text-sm" />
-                </button>
-              )}
+              <p className="text-gray-300 leading-relaxed">{comment.text || 'No comment text'}</p>
             </div>
-            <p className="text-gray-300 leading-relaxed">{comment.text}</p>
-          </div>
-        ))}
+          );
+        }).filter(Boolean)}
 
         {comments.length === 0 && (
           <div className="text-center py-12 text-gray-400">

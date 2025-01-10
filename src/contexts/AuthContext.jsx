@@ -1,12 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { createContext, useState, useContext, useEffect } from 'react'
 import {
-  auth
+  auth,
+  githubProvider
 } from '../config/firebase'
 import {
-  GithubAuthProvider,
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -19,9 +18,8 @@ import {
   reauthenticateWithCredential,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail
 } from 'firebase/auth'
-import { ImSpinner9 } from 'react-icons/im';
+import Loader from '../components/Loader'
 
-const provider = new GithubAuthProvider();
 const AuthContext = createContext()
 
 export function useAuth() {
@@ -31,83 +29,97 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth, 
-      (currentUser) => {
-        setUser(currentUser);
-        setLoading(false);
-      }, 
-      (error) => {
-        console.error('Detailed Auth State Change Error:', {
-          code: error.code,
-          message: error.message,
-          stack: error.stack
-        });
-        setLoading(false);
-      }
-    );
-
-    // Cleanup subscription on unmount
-    return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
-  }, []);
+  const [error, setError] = useState(null)
 
   async function signup(email, password, username) {
     try {
-      const auth = getAuth();
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Update the user's profile with the username
-      await updateProfile(user, {
+      setError(null)
+      const auth = getAuth()
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      
+      // Aggiorna il profilo utente con il username
+      await updateProfile(userCredential.user, {
         displayName: username
-      });
+      })
 
-      return user;
+      return userCredential.user
     } catch (error) {
-      console.error('Signup error:', error);
-      throw new Error(error.message);
+      setError({
+        code: error.code,
+        message: error.message
+      })
+      console.error('Signup error:', error)
+      throw error
     }
   }
 
   async function loginWithGithub() {
     try {
-      const auth = getAuth();
-      const result = await signInWithPopup(auth, provider);
-      return result.user;
+      setError(null)
+      const auth = getAuth()
+      const result = await signInWithPopup(auth, githubProvider)
+      return result.user
     } catch (error) {
-      console.error('GitHub Login Error:', {
+      setError({
         code: error.code,
         message: error.message,
-        email: error.customData?.email
-      });
-      throw error;
+        email: error.customData?.email,
+        credential: error.credential
+      })
+      console.error('GitHub Login Error:', error)
+      throw error
     }
   }
 
-  const login = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password)
+  async function login(email, password) {
+    try {
+      setError(null)
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      return userCredential.user
+    } catch (error) {
+      setError({
+        code: error.code,
+        message: error.message
+      })
+      console.error('Login error:', error)
+      throw error
+    }
   }
 
-  const logout = () => {
-    return signOut(auth).then(() => {
+  async function logout() {
+    try {
+      setError(null)
+      await signOut(auth)
       // Ricarica la pagina dopo il logout
       window.location.href = '/';
-    });
+    } catch (error) {
+      setError({
+        code: error.code,
+        message: error.message
+      })
+      console.error('Logout error:', error)
+      throw error
+    }
   }
 
-  const updateUserProfile = async (profileData) => {
+  async function updateUserProfile(profileData) {
     if (!auth.currentUser) throw new Error('No user logged in');
-    await updateProfile(auth.currentUser, profileData);
+    try {
+      setError(null)
+      await updateProfile(auth.currentUser, profileData);
+    } catch (error) {
+      setError({
+        code: error.code,
+        message: error.message
+      })
+      console.error('Update profile error:', error)
+      throw error
+    }
   };
 
   async function changePassword(currentPassword, newPassword) {
     try {
+      setError(null)
       const credential = EmailAuthProvider.credential(
         user.email,
         currentPassword
@@ -119,43 +131,95 @@ export function AuthProvider({ children }) {
       // Cambiare la password
       await updatePassword(user, newPassword)
     } catch (error) {
-      throw new Error(error.message)
+      setError({
+        code: error.code,
+        message: error.message
+      })
+      console.error('Change password error:', error)
+      throw error
     }
   }
 
   async function sendPasswordResetEmail(email) {
     try {
-      await firebaseSendPasswordResetEmail(auth, email);
+      setError(null)
+      await firebaseSendPasswordResetEmail(auth, email)
     } catch (error) {
-      console.error('Password reset error:', error);
-      throw new Error(error.message);
+      setError({
+        code: error.code,
+        message: error.message
+      })
+      console.error('Password reset error:', error)
+      throw error
     }
   }
 
+  async function deleteAccount(password) {
+    try {
+      setError(null)
+      const currentUser = auth.currentUser
+
+      if (!currentUser) {
+        throw new Error('No user is currently signed in')
+      }
+
+      // Riautenticazione con credenziali
+      const credential = EmailAuthProvider.credential(currentUser.email, password)
+      await reauthenticateWithCredential(currentUser, credential)
+
+      // Eliminazione account
+      await currentUser.delete()
+
+      // Reindirizzamento dopo eliminazione
+      window.location.href = '/signup'
+    } catch (error) {
+      setError({
+        code: error.code,
+        message: error.message
+      })
+      console.error('Account deletion error:', error)
+      throw error
+    }
+  }
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth, 
+      (currentUser) => {
+        setUser(currentUser)
+        setLoading(false)
+      }, 
+      (authError) => {
+        console.error('Auth State Change Error:', authError)
+        setError({
+          code: authError.code,
+          message: authError.message
+        })
+        setLoading(false)
+      }
+    )
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe()
+  }, [])
+
   const value = {
     user,
-    loading,
     signup,
     login,
     loginWithGithub,
     logout,
     updateUserProfile,
     changePassword,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    deleteAccount,
+    loading,
+    error
   }
 
   return (
     <AuthContext.Provider value={value}>
-      {loading ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
-          <div className="animate-spin text-6xl text-blue-500">
-            <ImSpinner9 />
-          </div>
-        </div>
-      ) : (
-        children
-      )}
+      {loading ? <Loader /> : children}
     </AuthContext.Provider>
   )
-
 }

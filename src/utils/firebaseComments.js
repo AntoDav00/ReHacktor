@@ -7,7 +7,8 @@ import {
   getDocs,
   deleteDoc,
   doc,
-  serverTimestamp
+  serverTimestamp,
+  where
 } from 'firebase/firestore'
 
 export const addComment = async (userId, gameId, comment) => {
@@ -25,9 +26,13 @@ export const addComment = async (userId, gameId, comment) => {
   }
 };
 
-export const getComments = async () => {
+export const getComments = async (gameId) => {
   try {
-    const q = query(collection(db, 'comments'), orderBy('createdAt', 'desc'));
+    const q = query(
+      collection(db, 'comments'), 
+      where('gameId', '==', gameId),
+      orderBy('createdAt', 'desc')
+    );
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -47,4 +52,4 @@ export const deleteComment = async (commentId) => {
     console.error('Error deleting comment:', error);
     throw error;
   }
-}; 
+};

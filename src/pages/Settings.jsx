@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { FaUser, FaEnvelope, FaSpinner, FaEye, FaEyeSlash, FaCheckCircle, FaTimesCircle, FaLock, FaKey } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaSpinner, FaEye, FaEyeSlash, FaCheckCircle, FaTimesCircle, FaLock, FaKey, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
+import Loader from '../components/Loader';
 
 const PasswordStrengthIndicator = ({ password }) => {
   const getPasswordStrength = (password) => {
@@ -53,15 +54,16 @@ const PasswordStrengthIndicator = ({ password }) => {
 const Settings = () => {
   const { 
     user, 
+    loading,  
     updateUserProfile, 
     changePassword, 
-    sendPasswordResetEmail 
+    sendPasswordResetEmail,
+    deleteAccount 
   } = useAuth();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState(user?.displayName || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -78,6 +80,11 @@ const Settings = () => {
 
   // Password Reset State
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  // Account Deletion State
+  const [isAccountDeletionOpen, setIsAccountDeletionOpen] = useState(false);
+  const [deletionPassword, setDeletionPassword] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const defaultAvatar = user 
     ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` 
@@ -141,7 +148,6 @@ const Settings = () => {
     
     if (!user) return;
 
-    setLoading(true);
     setError('');
 
     try {
@@ -165,12 +171,63 @@ const Settings = () => {
       navigate('/profile');
     } catch (error) {
       setError('Failed to update profile: ' + error.message);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const handleAccountDeletion = async (e) => {
+    e.preventDefault();
+    
+    // Controllo se l'utente è autenticato con GitHub
+    const isGithubUser = user.providerData.some(
+      (provider) => provider.providerId === 'github.com'
+    );
+
+    if (isGithubUser) {
+      toast.error('Non è possibile eliminare account autenticati tramite GitHub');
+      return;
+    }
+
+    setIsDeletingAccount(true);
+
+    try {
+      await deleteAccount(deletionPassword);
+      
+      // Rimuovi documento utente da Firestore
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await deleteDoc(userRef);
+      } catch (firestoreError) {
+        console.error('Error deleting user document:', firestoreError);
+      }
+
+      toast.success('Account eliminato con successo');
+      navigate('/');
+    } catch (error) {
+      toast.error(error.message || 'Impossibile eliminare l\'account');
+      setIsDeletingAccount(false);
     }
   };
 
   const isGithubUser = user.providerData[0].providerId === 'github.com';
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (!user) {
+    return (
+      <div className="text-center bg-gray-800 p-8 rounded-lg">
+        <h2 className="text-2xl mb-4">Accesso Richiesto</h2>
+        <p className="mb-4">Devi essere autenticato per modificare le impostazioni.</p>
+        <button 
+          onClick={() => navigate('/login')}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+        >
+          Vai al Login
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -244,140 +301,191 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Password Change Section */}
-            {!isGithubUser && isPasswordChangeOpen && (
-              <div className="bg-gray-800 p-6 rounded-lg mt-6">
-                <h3 className="text-xl font-semibold mb-4 text-white">Change Password</h3>
-                <form onSubmit={handlePasswordChange} className="space-y-4">
-                  <div className="relative">
-                    <label htmlFor="current-password" className="block text-sm font-medium text-gray-300 mb-2">
-                      Current Password
-                    </label>
-                    <input
-                      type={showCurrentPassword ? "text" : "password"}
-                      id="current-password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full pl-4 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
-                      placeholder="Enter current password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-10 text-gray-400 hover:text-white"
-                    >
-                      {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <label htmlFor="new-password" className="block text-sm font-medium text-gray-300 mb-2">
-                      New Password
-                    </label>
-                    <input
-                      type={showNewPassword ? "text" : "password"}
-                      id="new-password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full pl-4 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
-                      placeholder="Enter new password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-10 text-gray-400 hover:text-white"
-                    >
-                      {showNewPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-                    <PasswordStrengthIndicator password={newPassword} />
-                  </div>
-
-                  <div className="relative">
-                    <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300 mb-2">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      id="confirm-password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-4 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
-                      placeholder="Confirm new password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-10 text-gray-400 hover:text-white"
-                    >
-                      {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-                  </div>
-
-                  <div className="flex space-x-4">
-                    <button
-                      type="submit"
-                      disabled={!passwordsMatch || !newPassword}
-                      className={`w-full py-2 rounded-lg transition-all ${
-                        passwordsMatch && newPassword
-                          ? 'bg-green-600 hover:bg-green-700'
-                          : 'bg-gray-700 cursor-not-allowed'
-                      }`}
-                    >
-                      Change Password
-                    </button>
-                  </div>
-
-                  {passwordError && (
-                    <p className="text-sm text-red-500">{passwordError}</p>
-                  )}
-                  {passwordSuccess && (
-                    <p className="text-sm text-green-500">{passwordSuccess}</p>
-                  )}
-
-                  {/* Password Reset */}
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      onClick={handlePasswordReset}
-                      disabled={isResettingPassword}
-                      className="w-full flex items-center justify-center px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition-all"
-                    >
-                      {isResettingPassword ? (
-                        <FaSpinner className="animate-spin mr-2" />
-                      ) : (
-                        <>
-                          <FaKey className="mr-2" />
-                          Forgot Password? Reset via Email
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
             {/* Profile Update Buttons */}
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => navigate('/profile')}
-                className="flex-1 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center"
-              >
-                {loading ? (
-                  <FaSpinner className="animate-spin mr-2" />
-                ) : (
-                  'Save Changes'
-                )}
-              </button>
+            <div className="mt-6 flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/profile')}
+                  className="flex-1 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center"
+                >
+                  Save Changes
+                </button>
+              </div>
             </div>
           </form>
+
+          {/* Account Deletion Button */}
+          {!isGithubUser && (
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setIsAccountDeletionOpen(!isAccountDeletionOpen)}
+                className="w-full flex items-center justify-center px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition-all"
+              >
+                <FaTrash className="mr-2" /> 
+                {isAccountDeletionOpen ? 'Cancel Account Deletion' : 'Delete Account'}
+              </button>
+            </div>
+          )}
+
+          {/* Password Change Section */}
+          {!isGithubUser && isPasswordChangeOpen && (
+            <form onSubmit={handlePasswordChange} className="bg-gray-800 p-6 rounded-lg mt-6">
+              <h3 className="text-xl font-semibold mb-4 text-white">Change Password</h3>
+              <div className="relative">
+                <label htmlFor="current-password" className="block text-sm font-medium text-gray-300 mb-2">
+                  Current Password
+                </label>
+                <input
+                  type={showCurrentPassword ? "text" : "password"}
+                  id="current-password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full pl-4 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                  placeholder="Enter current password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-10 text-gray-400 hover:text-white"
+                >
+                  {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+
+              <div className="relative">
+                <label htmlFor="new-password" className="block text-sm font-medium text-gray-300 mb-2">
+                  New Password
+                </label>
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  id="new-password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full pl-4 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                  placeholder="Enter new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-10 text-gray-400 hover:text-white"
+                >
+                  {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+                <PasswordStrengthIndicator password={newPassword} />
+              </div>
+
+              <div className="relative">
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300 mb-2">
+                  Confirm New Password
+                </label>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirm-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full pl-4 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                  placeholder="Confirm new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-10 text-gray-400 hover:text-white"
+                >
+                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+
+              <div className="flex space-x-4">
+                <button
+                  type="submit"
+                  disabled={!passwordsMatch || !newPassword}
+                  className={`w-full py-2 rounded-lg transition-all ${
+                    passwordsMatch && newPassword
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-gray-700 cursor-not-allowed'
+                  }`}
+                >
+                  Change Password
+                </button>
+              </div>
+
+              {passwordError && (
+                <p className="text-sm text-red-500">{passwordError}</p>
+              )}
+              {passwordSuccess && (
+                <p className="text-sm text-green-500">{passwordSuccess}</p>
+              )}
+
+              {/* Password Reset */}
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={handlePasswordReset}
+                  disabled={isResettingPassword}
+                  className="w-full flex items-center justify-center px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition-all"
+                >
+                  {isResettingPassword ? (
+                    <FaSpinner className="animate-spin mr-2" />
+                  ) : (
+                    <>
+                      <FaKey className="mr-2" />
+                      Forgot Password? Reset via Email
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Account Deletion Section */}
+          {!isGithubUser && isAccountDeletionOpen && (
+            <div className="bg-gray-800 p-6 rounded-lg mt-2">
+              <h3 className="text-xl font-semibold mb-4 text-white text-red-500">Delete Account</h3>
+              <form onSubmit={handleAccountDeletion} className="space-y-4">
+                <div className="relative">
+                  <label htmlFor="deletion-password" className="block text-sm font-medium text-gray-300 mb-2">
+                    Confirm Password to Delete Account
+                  </label>
+                  <input
+                    type="password"
+                    id="deletion-password"
+                    value={deletionPassword}
+                    onChange={(e) => setDeletionPassword(e.target.value)}
+                    className="w-full pl-4 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white"
+                    placeholder="Enter your password"
+                  />
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    type="submit"
+                    disabled={!deletionPassword || isDeletingAccount}
+                    className={`w-full py-2 rounded-lg transition-all ${
+                      deletionPassword && !isDeletingAccount
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'bg-gray-700 cursor-not-allowed'
+                    }`}
+                  >
+                    {isDeletingAccount ? (
+                      <FaSpinner className="animate-spin mx-auto" />
+                    ) : (
+                      'Permanently Delete Account'
+                    )}
+                  </button>
+                </div>
+                <p className="text-sm text-red-500 mt-2">
+                  Warning: This action cannot be undone. All your data will be permanently deleted.
+                </p>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>

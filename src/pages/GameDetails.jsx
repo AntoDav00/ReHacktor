@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { FaStar, FaCalendar, FaGlobe } from 'react-icons/fa'
-import LoadingSkeleton from '../components/Features/LoadingSkeleton'
+import Loader from '../components/Loader'
 import Comments from '../components/Game/Comments'
 import FavoriteButton from '../components/Game/FavoriteButton'
 import ScreenshotsGallery from '../components/Game/ScreenshotsGallery'
@@ -34,7 +34,7 @@ const GameDetails = () => {
   }, [id])
 
   if (loading) {
-    return <LoadingSkeleton type="details" />
+    return <Loader />
   }
 
   if (!game) {

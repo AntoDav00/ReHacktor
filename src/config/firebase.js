@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, GithubAuthProvider } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,27 +12,28 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 }
 
+// Log dettagliato della configurazione
 console.log('Firebase Config:', {
     apiKey: firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 5) + '...' : 'Missing',
     authDomain: firebaseConfig.authDomain,
     projectId: firebaseConfig.projectId,
+    storageBucket: firebaseConfig.storageBucket,
+    messagingSenderId: firebaseConfig.messagingSenderId,
+    appId: firebaseConfig.appId,
+    measurementId: firebaseConfig.measurementId
 });
 
-let auth, db, storage, githubProvider;
+const app = initializeApp(firebaseConfig)
+console.log('Firebase App Initialized Successfully')
 
-try {
-    const app = initializeApp(firebaseConfig)
-    console.log('Firebase App Initialized Successfully')
-    
-    auth = getAuth(app)
-    db = getFirestore(app)
-    storage = getStorage(app)
+const auth = getAuth(app)
+console.log('Firebase Auth Initialized')
 
-    // GitHub provider
-    githubProvider = new GithubAuthProvider()
-} catch (error) {
-    console.error('Firebase Initialization Error:', error)
-    throw error
-}
+const db = getFirestore(app)
+console.log('Firestore Initialized')
 
-export { auth, db, storage, githubProvider }
+// GitHub provider
+const githubProvider = new GithubAuthProvider()
+console.log('GitHub Provider Created')
+
+export { auth, db, githubProvider }

@@ -6,6 +6,9 @@ import imagemin from 'vite-plugin-imagemin'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
+  console.log('Environment Mode:', mode)
+  console.log('Loaded Environment Variables:', Object.keys(env))
+
   // Validate required environment variables
   const requiredEnvVars = [
     'VITE_FIREBASE_API_KEY',

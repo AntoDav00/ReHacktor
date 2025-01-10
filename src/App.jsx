@@ -6,7 +6,6 @@ import { AuthProvider } from './contexts/AuthContext'
 import ScrollToTop from './components/ScrollToTop'
 import PrivateRoute from './components/Auth/PrivateRoute'
 import { Toaster } from 'react-hot-toast'
-import Spinner from './components/Spinner'
 
 // Lazy load pages
 const Home = lazy(() => import('./pages/Home'))
@@ -67,7 +66,7 @@ const App = () => {
         <div className="min-h-screen bg-gray-900 text-white">
           <Navbar onResetFilters={resetFilters} />
           <main className="container mx-auto px-4 py-8">
-            <Suspense fallback={<Spinner />}>
+            <Suspense fallback={null}>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/game/:id" element={<GameDetails />} />

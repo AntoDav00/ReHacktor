@@ -19,17 +19,21 @@ console.log('Firebase Config:', {
     projectId: firebaseConfig.projectId,
 });
 
+let auth, db, storage, githubProvider;
+
 try {
     const app = initializeApp(firebaseConfig)
     console.log('Firebase App Initialized Successfully')
     
-    export const auth = getAuth(app)
-    export const db = getFirestore(app)
-    export const storage = getStorage(app)
+    auth = getAuth(app)
+    db = getFirestore(app)
+    storage = getStorage(app)
 
     // GitHub provider
-    export const githubProvider = new GithubAuthProvider()
+    githubProvider = new GithubAuthProvider()
 } catch (error) {
     console.error('Firebase Initialization Error:', error)
     throw error
 }
+
+export { auth, db, storage, githubProvider }

@@ -90,15 +90,25 @@ const Profile = () => {
   };
 
   const fetchAllGameDetails = async (favouriteGames) => {
+    console.log('🔍 INIZIO RECUPERO DETTAGLI GIOCHI', favouriteGames.length);
     const gameDetailsMap = {};
 
     for (const game of favouriteGames) {
-      // Salta la chiamata API per AddFavoriteCard
-      if (typeof game.id === 'string' && game.id.startsWith('add-favorite')) {
-        gameDetailsMap[game.id] = {
-          [game.id]: {
+      // Estrai l'ID in modo più flessibile
+      const gameId = game.gameId || game.id || game.details?.id;
+
+      // Salta se non c'è un ID valido
+      if (!gameId) {
+        console.warn('⚠️ GAME SENZA ID VALIDO:', game);
+        continue;
+      }
+
+      // Salta se è una carta "Aggiungi Preferiti"
+      if (typeof gameId === 'string' && gameId.startsWith('add-favorite')) {
+        gameDetailsMap[gameId] = {
+          [gameId]: {
             details: {
-              id: game.id,
+              id: gameId,
               name: 'Add Favorite',
               background_image: null,
               genres: [],
@@ -112,15 +122,15 @@ const Profile = () => {
 
       try {
         const [detailsResponse, screenshotsResponse] = await Promise.all([
-          axios.get(`${RAWG_BASE_URL}/games/${game.id}?key=${RAWG_API_KEY}`),
-          axios.get(`${RAWG_BASE_URL}/games/${game.id}/screenshots?key=${RAWG_API_KEY}`)
+          axios.get(`${RAWG_BASE_URL}/games/${gameId}?key=${RAWG_API_KEY}`),
+          axios.get(`${RAWG_BASE_URL}/games/${gameId}/screenshots?key=${RAWG_API_KEY}`)
         ]);
         
         const details = detailsResponse.data;
         const screenshotsData = screenshotsResponse.data.results.slice(0, 5);
         
-        gameDetailsMap[game.id] = { 
-          [game.id]: {
+        gameDetailsMap[gameId] = { 
+          [gameId]: {
             details: {
               id: details.id,
               name: details.name,
@@ -131,12 +141,15 @@ const Profile = () => {
             screenshots: screenshotsData
           }
         };
+        
+        console.log(`✅ DETTAGLI RECUPERATI PER GIOCO ${gameId}`);
       } catch (error) {
-        console.error(`Error fetching game details for ${game.id}:`, error);
-        gameDetailsMap[game.id] = null;
+        console.error(`❌ ERRORE RECUPERO DETTAGLI PER GIOCO ${gameId}:`, error);
+        gameDetailsMap[gameId] = null;
       }
     }
 
+    console.log('🏁 FINE RECUPERO DETTAGLI GIOCHI', Object.keys(gameDetailsMap).length);
     return gameDetailsMap;
   };
 

@@ -86,6 +86,19 @@ const Settings = () => {
   const [deletionPassword, setDeletionPassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
+  // Add a local loading state for page-specific operations
+  const [isPageLoading, setIsPageLoading] = useState(true);
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        navigate('/login');
+      } else {
+        setIsPageLoading(false);
+      }
+    }
+  }, [loading, user, navigate]);
+
   const defaultAvatar = user 
     ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` 
     : 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
@@ -210,7 +223,7 @@ const Settings = () => {
 
   const isGithubUser = user.providerData[0].providerId === 'github.com';
 
-  if (loading) {
+  if (loading || isPageLoading) {
     return <Loader />;
   }
 

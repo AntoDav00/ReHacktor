@@ -315,91 +315,34 @@ const Profile = () => {
     });
   };
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      if (!user) return;
-
-      try {
-        setLoading(true);
-
-        // Fetch Favorites
-        const favorites = await getFavorites(user.uid);
-        
-        if (favorites && favorites.length > 0) {
-          // Sort favorites by date added
-          const sortedFavorites = [...favorites].sort(
-            (a, b) => b.dateAdded - a.dateAdded
-          );
-
-          // Fetch game details for favorites
-          const gamesWithDetails = await Promise.all(
-            sortedFavorites.map(async (favorite) => {
-              const details = await fetchGameDetails(favorite.gameId, true);
-              
-              return {
-                ...details,
-                gameId: favorite.gameId,
-                addedAt: favorite.addedAt || new Date().toISOString()
-              };
-            })
-          );
-
-          // Set recently added games (first 5 different from favorites)
-          const recentlyAdded = gamesWithDetails.filter(game => 
-            !favouriteGames.some(favGame => favGame.id === game.id)
-          ).slice(0, 5);
-          setRecentlyAddedGames(recentlyAdded);
-          
-          // Set favorite games, con un solo AddFavoriteCard se ci sono 3 o più giochi
-          setFavouriteGames(
-            gamesWithDetails.length < 3 
-              ? [
-                ...gamesWithDetails,
-                { id: 'add-favorite-1' },
-                { id: 'add-favorite-2' },
-                { id: 'add-favorite-3' }
-              ].slice(0, 6)
-              : [
-                ...gamesWithDetails,
-                { id: 'add-favorite-1' }
-              ].slice(0, 4)
-          );
-        } else {
-          // If no favorites, set default state with 3 AddFavoriteCard
-          setRecentlyAddedGames([]);
-          setFavouriteGames([
-            { id: 'add-favorite-1' },
-            { id: 'add-favorite-2' },
-            { id: 'add-favorite-3' }
-          ]);
-        }
-
-        // Fetch User Comments
-        const comments = await getComments();
-        const userComments = comments.filter(
-          (comment) => comment.userId === user.email
-        );
-        
-        // Fetch game details for comments
-        const commentsWithGameDetails = await Promise.all(
-          userComments.map(async (comment) => {
-            const gameDetails = await fetchGameDetails(comment.gameId, false);
-            return {
-              ...comment,
-              gameName: gameDetails?.name || 'Unknown Game',
-              gameImage: gameDetails?.background_image || null
-            };
-          })
-        );
-        
-        setUserComments(commentsWithGameDetails);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setLoading(false);
+  const fetchAllData = async () => {
+    try {
+      if (!user) {
+        navigate('/login');
+        return;
       }
-    };
 
+      // Fetch favorite games
+      const favorites = await getFavorites(user.uid);
+      setFavouriteGames(favorites);
+
+      // Fetch game details for favorites
+      const gameDetailsMap = await fetchAllGameDetails(favorites);
+      setGameDetails(gameDetailsMap);
+
+      // Fetch user comments
+      const comments = await getComments(user.uid);
+      setUserComments(comments);
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      toast.error('Failed to load profile data');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (!authLoading) {
       fetchAllData();
     }

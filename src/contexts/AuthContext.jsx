@@ -182,15 +182,22 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const forceStopLoading = () => {
+    console.warn('🚨 Forzo interruzione caricamento');
+    setLoading(false)
+  }
+
   useEffect(() => {
+    console.log('🔍 Inizio monitoraggio stato autenticazione');
     const unsubscribe = onAuthStateChanged(
       auth, 
       (currentUser) => {
+        console.log('👤 Stato utente cambiato:', currentUser ? 'Utente autenticato' : 'Nessun utente');
         setUser(currentUser)
         setLoading(false)
       }, 
       (authError) => {
-        console.error('Auth State Change Error:', authError)
+        console.error('❌ Errore nel cambio di stato di autenticazione:', authError)
         setError({
           code: authError.code,
           message: authError.message
@@ -199,12 +206,24 @@ export function AuthProvider({ children }) {
       }
     )
 
-    // Cleanup subscription on unmount
-    return () => unsubscribe()
+    // Aggiungi un timeout per forzare lo sblocco del caricamento
+    const loadingTimeout = setTimeout(() => {
+      console.warn('⏰ Timeout caricamento autenticazione');
+      forceStopLoading()
+    }, 10000)  // 10 secondi
+
+    // Cleanup
+    return () => {
+      unsubscribe()
+      clearTimeout(loadingTimeout)
+    }
   }, [])
 
   const value = {
     user,
+    loading,
+    error,
+    forceStopLoading,
     signup,
     login,
     loginWithGithub,
@@ -212,9 +231,7 @@ export function AuthProvider({ children }) {
     updateUserProfile,
     changePassword,
     sendPasswordResetEmail,
-    deleteAccount,
-    loading,
-    error
+    deleteAccount
   }
 
   return (

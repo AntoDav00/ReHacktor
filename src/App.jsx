@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-unused-vars
-import React, { useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import { FaSpinner } from 'react-icons/fa'
 import { Toaster } from 'react-hot-toast'
@@ -104,12 +104,29 @@ const App = () => {
 // Componente wrapper per le rotte private
 const RequireAuth = ({ children }) => {
   const { user, loading } = useAuth()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    // Se il caricamento dura più di 5 secondi, forza il reindirizzamento
+    const timer = setTimeout(() => {
+      if (loading) {
+        console.warn('⏰ Caricamento troppo lungo, forzo reindirizzamento a login');
+        navigate('/login')
+      }
+    }, 5000)
+
+    return () => clearTimeout(timer)
+  }, [loading, navigate])
+
+  console.log('🔒 RequireAuth - Loading:', loading);
+  console.log('🔒 RequireAuth - User:', user);
 
   if (loading) {
     return <Loader />
   }
 
   if (!user) {
+    console.log('🚫 Nessun utente, reindirizzamento a login');
     return <Navigate to="/login" replace />
   }
 

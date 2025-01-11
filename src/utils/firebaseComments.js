@@ -26,21 +26,27 @@ export const addComment = async (userId, gameId, comment) => {
   }
 };
 
-export const getComments = async (gameId) => {
+export const getComments = async (userId) => {
   try {
+    console.log(' RECUPERO COMMENTI PER UTENTE:', userId);
+
     const q = query(
       collection(db, 'comments'), 
-      where('gameId', '==', gameId),
+      where('userId', '==', userId),
       orderBy('createdAt', 'desc')
     );
+
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
+    const comments = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate().toISOString()
     }));
+
+    console.log(' COMMENTI TROVATI:', comments.length);
+    return comments;
   } catch (error) {
-    console.error('Error getting comments:', error);
+    console.error(' ERRORE NEL RECUPERO COMMENTI:', error);
     throw error;
   }
 };

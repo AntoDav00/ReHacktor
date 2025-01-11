@@ -19,6 +19,8 @@ const RAWG_BASE_URL = 'https://api.rawg.io/api';
 const RAWG_API_KEY = import.meta.env.VITE_RAWG_API_KEY;
 
 const Profile = () => {
+  console.log('🚨 PROFILE COMPONENT RENDERING');
+
   const { user, loading: authLoading } = useAuth();
   const [favouriteGames, setFavouriteGames] = useState([]);
   const [recentlyAddedGames, setRecentlyAddedGames] = useState([]);
@@ -30,14 +32,20 @@ const Profile = () => {
   const [gameDetails, setGameDetails] = useState({});
   const navigate = useNavigate();
 
-  // Log dettagliati all'inizio del componente
+  // Debug completo dello stato
   useEffect(() => {
-    console.log('🔍 Profile Component - Stato iniziale:', {
-      user: user ? user.uid : null,
+    console.log('🔍 PROFILE COMPONENT - STATO COMPLETO:', {
+      user: user ? {
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email
+      } : null,
       authLoading,
-      loading
+      loading,
+      favouriteGames: favouriteGames.length,
+      userComments: userComments.length
     });
-  }, []);
+  }, [user, authLoading, loading, favouriteGames, userComments]);
 
   // Immagine di default per l'avatar
   const defaultAvatar = user 
@@ -324,56 +332,87 @@ const Profile = () => {
     });
   };
 
-  // Funzione per fetchare tutti i dati
-  const fetchAllData = async () => {
-    console.log('🚀 Inizio fetch dati profilo');
+  // Funzione per fetchare tutti i dati con debug esteso
+  const fetchAllData = useCallback(async () => {
+    console.log('🚀 INIZIO FETCH DATI PROFILO');
     try {
       if (!user) {
-        console.warn('⚠️ Nessun utente, reindirizzamento a login');
+        console.warn('⚠️ NESSUN UTENTE, REINDIRIZZAMENTO A LOGIN');
         navigate('/login');
         return;
       }
 
-      // Fetch giochi preferiti
-      const favorites = await getFavorites(user.uid);
-      console.log('📚 Giochi preferiti:', favorites);
+      console.log('🔍 INIZIO RECUPERO DATI PER:', user.uid);
+
+      // Debug dei servizi Firebase
+      const favoritesPromise = getFavorites(user.uid);
+      const commentsPromise = getComments(user.uid);
+
+      const [favorites, comments] = await Promise.all([
+        favoritesPromise,
+        commentsPromise
+      ]);
+
+      console.log('📚 GIOCHI PREFERITI:', favorites);
+      console.log('💬 COMMENTI UTENTE:', comments);
+
       setFavouriteGames(favorites);
-
-      // Fetch dettagli giochi
-      const gameDetailsMap = await fetchAllGameDetails(favorites);
-      console.log('🎮 Dettagli giochi:', gameDetailsMap);
-      setGameDetails(gameDetailsMap);
-
-      // Fetch commenti utente
-      const comments = await getComments(user.uid);
-      console.log('💬 Commenti utente:', comments);
       setUserComments(comments);
 
+      // Recupero dettagli giochi
+      const gameDetailsMap = await fetchAllGameDetails(favorites);
+      console.log('🎮 DETTAGLI GIOCHI:', gameDetailsMap);
+      setGameDetails(gameDetailsMap);
+
       setLoading(false);
-      console.log('✅ Caricamento dati profilo completato');
+      console.log('✅ CARICAMENTO DATI PROFILO COMPLETATO');
     } catch (error) {
-      console.error('❌ Errore nel caricamento dati profilo:', error);
+      console.error('❌ ERRORE NEL CARICAMENTO DATI PROFILO:', error);
       toast.error('Impossibile caricare i dati del profilo');
       setLoading(false);
       navigate('/');
     }
-  };
+  }, [user, navigate]);
 
-  // Gestisci il caricamento quando cambia lo stato di autenticazione
+  // Gestione caricamento dati
   useEffect(() => {
-    console.log('🔄 Stato autenticazione cambiato:', {
+    console.log('🔄 STATO AUTENTICAZIONE CAMBIATO:', {
       authLoading,
-      user: user ? user.uid : null
+      userPresente: !!user
     });
 
-    if (!authLoading) {
+    if (!authLoading && user) {
       fetchAllData();
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, fetchAllData]);
 
-  // Gestisci il caso di caricamento
-  if (authLoading || loading) {
-    console.log('⏳ Caricamento in corso...');
+  // Rendering condizionale con log
+  if (authLoading) {
+    console.log('⏳ CARICAMENTO AUTENTICAZIONE IN CORSO');
+    return (
+      <div className="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
+        <div className="relative">
+          <div className="w-24 h-24 rounded-full border-8 border-gray-600 border-t-transparent animate-spin"></div>
+          <div className="w-24 h-24 rounded-full border-8 border-gray-700 border-t-transparent animate-spin absolute top-0 left-0 animate-ping"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    console.log('🚫 NESSUN UTENTE, REINDIRIZZAMENTO');
+    return (
+      <div className="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
+        <div className="relative">
+          <div className="w-24 h-24 rounded-full border-8 border-gray-600 border-t-transparent animate-spin"></div>
+          <div className="w-24 h-24 rounded-full border-8 border-gray-700 border-t-transparent animate-spin absolute top-0 left-0 animate-ping"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    console.log('⏳ CARICAMENTO DATI PROFILO IN CORSO');
     return (
       <div className="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
         <div className="relative">

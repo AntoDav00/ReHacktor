@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import { FaSpinner } from 'react-icons/fa'
 import { Toaster } from 'react-hot-toast'
@@ -36,9 +36,24 @@ const App = () => {
     });
   };
 
+  // Aggiungi un wrapper per il debug del routing
+  const DebugRouter = () => {
+    const { user, loading } = useAuth();
+    const location = useLocation();
+
+    useEffect(() => {
+      console.log('🌐 Posizione corrente:', location.pathname);
+      console.log('👤 Stato utente:', user);
+      console.log('🔄 Stato caricamento:', loading);
+    }, [location, user, loading]);
+
+    return null;
+  };
+
   return (
     <AuthProvider>
       <BrowserRouter>
+        <DebugRouter />
         <ScrollToTop />
         <Toaster 
           position="top-right"
@@ -103,31 +118,45 @@ const App = () => {
 
 // Componente wrapper per le rotte private
 const RequireAuth = ({ children }) => {
-  const { user, loading } = useAuth()
+  const { user, loading, forceStopLoading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
+    console.log('🔒 RequireAuth - Dettagli:', {
+      path: location.pathname,
+      loading,
+      user: user ? user.uid : null
+    });
+
     // Se il caricamento dura più di 5 secondi, forza il reindirizzamento
     const timer = setTimeout(() => {
       if (loading) {
-        console.warn('⏰ Caricamento troppo lungo, forzo reindirizzamento a login');
-        navigate('/login')
+        console.warn('⏰ Caricamento troppo lungo, forzo interruzione');
+        forceStopLoading();
+        navigate('/login', { 
+          state: { from: location },
+          replace: true 
+        });
       }
     }, 5000)
 
     return () => clearTimeout(timer)
-  }, [loading, navigate])
+  }, [loading, navigate, location, forceStopLoading])
 
-  console.log('🔒 RequireAuth - Loading:', loading);
-  console.log('🔒 RequireAuth - User:', user);
-
+  // Gestisci esplicitamente i casi di caricamento e autenticazione
   if (loading) {
+    console.log('🔄 Caricamento in corso...');
     return <Loader />
   }
 
   if (!user) {
     console.log('🚫 Nessun utente, reindirizzamento a login');
-    return <Navigate to="/login" replace />
+    return <Navigate 
+      to="/login" 
+      state={{ from: location }} 
+      replace 
+    />
   }
 
   return children

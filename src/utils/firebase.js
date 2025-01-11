@@ -42,18 +42,30 @@ export const toggleFavorite = async (userId, game) => {
 };
 
 export const getFavorites = async (userId) => {
-  if (!userId) return [];
+  if (!userId) {
+    console.warn('⚠️ NESSUN USERID FORNITO');
+    return [];
+  }
 
   try {
+    console.log('🔍 RECUPERO PREFERITI PER UTENTE:', userId);
+
     const q = query(
       collection(db, 'favorites'),
       where('userId', '==', userId)
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data());
+    const favorites = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      console.log('📦 PREFERITO TROVATO:', data);
+      return data;
+    });
+
+    console.log('📚 TOTALE PREFERITI:', favorites.length);
+    return favorites;
   } catch (error) {
-    console.error('Error getting favorites:', error);
+    console.error('❌ ERRORE NEL RECUPERO PREFERITI:', error);
     throw error;
   }
 };

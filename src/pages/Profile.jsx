@@ -30,6 +30,15 @@ const Profile = () => {
   const [gameDetails, setGameDetails] = useState({});
   const navigate = useNavigate();
 
+  // Log dettagliati all'inizio del componente
+  useEffect(() => {
+    console.log('🔍 Profile Component - Stato iniziale:', {
+      user: user ? user.uid : null,
+      authLoading,
+      loading
+    });
+  }, []);
+
   // Immagine di default per l'avatar
   const defaultAvatar = user 
     ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` 
@@ -315,76 +324,56 @@ const Profile = () => {
     });
   };
 
+  // Funzione per fetchare tutti i dati
   const fetchAllData = async () => {
+    console.log('🚀 Inizio fetch dati profilo');
     try {
       if (!user) {
+        console.warn('⚠️ Nessun utente, reindirizzamento a login');
         navigate('/login');
         return;
       }
 
-      // Fetch favorite games
+      // Fetch giochi preferiti
       const favorites = await getFavorites(user.uid);
+      console.log('📚 Giochi preferiti:', favorites);
       setFavouriteGames(favorites);
 
-      // Fetch game details for favorites
+      // Fetch dettagli giochi
       const gameDetailsMap = await fetchAllGameDetails(favorites);
+      console.log('🎮 Dettagli giochi:', gameDetailsMap);
       setGameDetails(gameDetailsMap);
 
-      // Fetch user comments
+      // Fetch commenti utente
       const comments = await getComments(user.uid);
+      console.log('💬 Commenti utente:', comments);
       setUserComments(comments);
 
       setLoading(false);
+      console.log('✅ Caricamento dati profilo completato');
     } catch (error) {
-      console.error('Error fetching profile data:', error);
-      toast.error('Failed to load profile data');
+      console.error('❌ Errore nel caricamento dati profilo:', error);
+      toast.error('Impossibile caricare i dati del profilo');
       setLoading(false);
+      navigate('/');
     }
   };
 
+  // Gestisci il caricamento quando cambia lo stato di autenticazione
   useEffect(() => {
+    console.log('🔄 Stato autenticazione cambiato:', {
+      authLoading,
+      user: user ? user.uid : null
+    });
+
     if (!authLoading) {
       fetchAllData();
     }
-  }, [user, authLoading]);
+  }, [authLoading, user]);
 
-  useEffect(() => {
-    const fetchGameDetailsAndScreenshots = async () => {
-      const gameDetailsMap = await fetchAllGameDetails(favouriteGames);
-      
-      setGameDetails(prev => ({...prev, ...Object.fromEntries(
-        Object.entries(gameDetailsMap).map(([gameId, data]) => [gameId, data[gameId].details])
-      )}));
-      
-      setScreenshots(prev => ({...prev, ...Object.fromEntries(
-        Object.entries(gameDetailsMap).map(([gameId, data]) => [gameId, data[gameId].screenshots])
-      )}));
-    };
-
-    if (favouriteGames.length > 0) {
-      fetchGameDetailsAndScreenshots();
-    }
-  }, [favouriteGames]);
-
-  if (authLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!user) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">Please login to view your profile</h2>
-        <Link
-          to="/login"
-          className="inline-flex items-center px-6 py-3 rounded-full bg-gray-600 hover:bg-gray-700"
-        >
-          Login
-        </Link>
-      </div>
-    );
-  }
-
-  if (loading) {
+  // Gestisci il caso di caricamento
+  if (authLoading || loading) {
+    console.log('⏳ Caricamento in corso...');
     return (
       <div className="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
         <div className="relative">

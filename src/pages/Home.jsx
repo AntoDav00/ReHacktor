@@ -24,29 +24,49 @@ const Home = () => {
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const response = await fetch(`https://api.rawg.io/api/genres?key=${API_KEY}`, {
+        console.log('API Key:', import.meta.env.VITE_RAWG_API_KEY); // Verifica chiave API
+        console.log('Environment:', import.meta.env.MODE); // Verifica ambiente
+
+        const url = `/proxy/genres?key=${API_KEY}`;
+        console.log('Fetching genres from:', url);
+
+        const response = await fetch(url, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Origin': window.location.origin // Aggiungi header CORS
           }
         });
 
+        console.log('Response status:', response.status); // Log dello stato della risposta
+        console.log('Response headers:', response.headers); // Log degli header della risposta
+
         if (!response.ok) {
           const errorText = await response.text();
+          console.error('Detailed error:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorText: errorText
+          });
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('Genres data:', data);
 
         const genresMap = {};
         data.results.forEach(genre => {
           genresMap[genre.id.toString()] = genre.name;
           genresMap[genre.slug] = genre.name;
         });
+        console.log('Genres map:', genresMap);
         setGenres(genresMap);
       } catch (error) {
-        console.error('Errore durante il fetch dei generi:', error);
+        console.error('Errore durante il fetch dei generi:', {
+          message: error.message,
+          stack: error.stack
+        });
       }
     };
 
@@ -66,22 +86,35 @@ const Home = () => {
   const fetchGames = async (pageNumber) => {
     setLoading(true)
     try {
-      let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${pageNumber}&page_size=12`
+      console.log('API Key:', import.meta.env.VITE_RAWG_API_KEY); // Verifica chiave API
+      console.log('Environment:', import.meta.env.MODE); // Verifica ambiente
+      
+      let url = `/proxy/games?key=${API_KEY}&page=${pageNumber}&page_size=12`
 
       if (filters.platform) url += `&platforms=${filters.platform}`
       if (filters.genre) url += `&genres=${filters.genre}`
       if (filters.sortBy !== 'relevance') url += `&ordering=${filters.sortBy}`
 
+      console.log('Full API URL:', url);
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Origin': window.location.origin // Aggiungi header CORS
         }
       });
 
+      console.log('Response status:', response.status); // Log dello stato della risposta
+
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('Detailed error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText
+        });
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -96,7 +129,10 @@ const Home = () => {
       setHasMore(data.next !== null)
       setLoading(false)
     } catch (error) {
-      console.error('Errore nel recupero dei giochi:', error);
+      console.error('Errore nel recupero dei giochi:', {
+        message: error.message,
+        stack: error.stack
+      });
       setLoading(false)
     }
   };

@@ -20,7 +20,28 @@ const Login = () => {
       await login(email, password)
       Navigate('/')
     } catch (error) {
-      setError('Failed to sign in: ' + error.message)
+      let errorMessage = 'Failed to sign in'
+      
+      // Gestione errori specifici di login
+      switch(error.code) {
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email format. Please check your email address.'
+          break
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email. Please sign up.'
+          break
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password. Please try again.'
+          break
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many login attempts. Please try again later.'
+          break
+        default:
+          errorMessage += `: ${error.message}`
+      }
+      
+      setError(errorMessage)
       logger.error('Login error:', error)
     } finally {
       setLoading(false)

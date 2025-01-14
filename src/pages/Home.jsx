@@ -11,6 +11,7 @@ const Home = () => {
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
   const [genres, setGenres] = useState([])
+  const [platforms, setPlatforms] = useState([])
 
   // eslint-disable-next-line no-unused-vars
   const [page, setPage] = useState(1)
@@ -27,8 +28,8 @@ const Home = () => {
         console.log('API Key:', import.meta.env.VITE_RAWG_API_KEY); // Verifica chiave API
         console.log('Environment:', import.meta.env.MODE); // Verifica ambiente
 
-        const url = `/proxy/genres?key=${API_KEY}`;
-        console.log('Fetching genres from:', url);
+        const url = `https://api.rawg.io/api/genres?key=${API_KEY}`;
+        console.log('Full Genres URL:', url);
 
         const response = await fetch(url, {
           method: 'GET',
@@ -74,6 +75,47 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    const fetchPlatforms = async () => {
+      try {
+        const platformsUrl = `https://api.rawg.io/api/platforms?key=${API_KEY}&page_size=100`;
+        console.log('Full Platforms URL:', platformsUrl);
+
+        const response = await fetch(platformsUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Detailed platforms error:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorText: errorText
+          });
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const platformsMap = {};
+        data.results.forEach(platform => {
+          platformsMap[platform.id.toString()] = platform.name;
+        });
+        setPlatforms(platformsMap);
+      } catch (error) {
+        console.error('Errore durante il fetch delle piattaforme:', {
+          message: error.message,
+          stack: error.stack
+        });
+      }
+    };
+
+    fetchPlatforms();
+  }, []);
+
+  useEffect(() => {
     const genreFromUrl = searchParams.get('genre');
     if (genreFromUrl) {
       setFilters(prev => ({
@@ -89,13 +131,12 @@ const Home = () => {
       console.log('API Key:', import.meta.env.VITE_RAWG_API_KEY); // Verifica chiave API
       console.log('Environment:', import.meta.env.MODE); // Verifica ambiente
       
-      let url = `/proxy/games?key=${API_KEY}&page=${pageNumber}&page_size=12`
+      let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${pageNumber}&page_size=50&ordering=-rating`;
 
-      if (filters.platform) url += `&platforms=${filters.platform}`
-      if (filters.genre) url += `&genres=${filters.genre}`
-      if (filters.sortBy !== 'relevance') url += `&ordering=${filters.sortBy}`
-
-      console.log('Full API URL:', url);
+      if (filters.platform) url += `&platforms=${filters.platform}`;
+      if (filters.genre) url += `&genres=${filters.genre}`;
+      
+      console.log('Full Games URL:', url);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -296,9 +337,11 @@ const Home = () => {
                   onChange={(e) => setFilters(prev => ({ ...prev, platform: e.target.value }))}
                 >
                   <option value="">All Platforms</option>
-                  <option value="4">PC</option>
-                  <option value="187">PlayStation 5</option>
-                  <option value="1">Xbox One</option>
+                  {Object.entries(platforms).map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

@@ -25,7 +25,7 @@ const Home = () => {
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const response = await fetch(`/api/genres?key=${API_KEY}`, {
+        const response = await fetch(`https://api.rawg.io/api/genres?key=${API_KEY}`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -58,7 +58,7 @@ const Home = () => {
   useEffect(() => {
     const fetchPlatforms = async () => {
       try {
-        const response = await fetch(`/api/platforms?key=${API_KEY}&page_size=100`);
+        const response = await fetch(`https://api.rawg.io/api/platforms?key=${API_KEY}&page_size=100`);
         
         if (!response.ok) {
           console.error('Errore nel fetch delle piattaforme:', response.status, response.statusText);
@@ -92,7 +92,7 @@ const Home = () => {
   const fetchGames = async (pageNumber) => {
     setLoading(true)
     try {
-      let url = `/api/games?key=${API_KEY}&page=${pageNumber}&page_size=12`
+      let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${pageNumber}&page_size=12`
 
       if (filters.platform) url += `&platforms=${filters.platform}`
       if (filters.genre) url += `&genres=${filters.genre}`

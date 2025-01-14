@@ -18,5 +18,3 @@ export const db = getFirestore(app)
 
 // GitHub provider
 export const githubProvider = new GithubAuthProvider()
-
-

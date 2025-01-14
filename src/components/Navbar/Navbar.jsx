@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useState, useEffect } from 'react'
 import AutoCompleteCardUi from '../AutoCompleteCardUi'
-import { FaGamepad } from 'react-icons/fa'
 import logger from '../../utils/logger';
 
 const Navbar = ({ onResetFilters }) => {

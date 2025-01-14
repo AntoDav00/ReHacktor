@@ -54,8 +54,8 @@ const Login = () => {
     try {
       setError('')
       setLoading(true)
-      
       // Timeout per il login GitHub
+      // eslint-disable-next-line no-unused-vars
       const loginResult = await Promise.race([
         loginWithGithub(),
         new Promise((_, reject) => 

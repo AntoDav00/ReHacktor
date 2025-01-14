@@ -23,7 +23,8 @@
     "react-search-autocomplete": "^8.5.2",
     "react-slick": "^0.30.3",
     "react-toastify": "^11.0.2",
-    "slick-carousel": "^1.8.1"
+    "slick-carousel": "^1.8.1",
+    "web-vitals": "^4.2.4"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.25.9",

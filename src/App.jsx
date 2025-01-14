@@ -1,22 +1,22 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 // eslint-disable-next-line no-unused-vars
-import React, { useState, useEffect } from 'react'
+import React, { lazy, Suspense, useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
 import Loader from './components/Loader'
 
-// Importazioni dirette
-import Home from './pages/Home'
-import GameDetails from './pages/GameDetails'
-import Categories from './pages/Categories'
-import Login from './components/Auth/Login'
-import Signup from './components/Auth/Signup'
-import Favorites from './pages/Favorites'
-import Search from './pages/Search'
-import Profile from './pages/Profile'
-import Settings from './pages/Settings'
+// Code Splitting con lazy loading
+const Home = lazy(() => import('./pages/Home'))
+const GameDetails = lazy(() => import('./pages/GameDetails'))
+const Categories = lazy(() => import('./pages/Categories'))
+const Login = lazy(() => import('./components/Auth/Login'))
+const Signup = lazy(() => import('./components/Auth/Signup'))
+const Favorites = lazy(() => import('./pages/Favorites'))
+const Search = lazy(() => import('./pages/Search'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Settings = lazy(() => import('./pages/Settings'))
 
 import Navbar from './components/Navbar/Navbar'
 import { AuthProvider } from './contexts/AuthContext'
@@ -66,47 +66,49 @@ const App = () => {
         <div className="min-h-screen bg-gray-900 text-white">
           <Navbar onResetFilters={resetFilters} />
           <main className="container mx-auto px-4 py-8">
-            <Routes>
-              {/* Rotte pubbliche */}
-              <Route path="/login" element={<Login redirect="/" />} />
-              <Route path="/signup" element={<Signup redirect="/" />} />
-              
-              {/* Rotte con accesso pubblico */}
-              <Route path="/" element={<Home />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/search/:query" element={<Search />} />
-              <Route path="/game/:id" element={<GameDetails />} />
-              <Route path="/categories" element={<Categories />} />
-              
-              {/* Rotte che richiedono autenticazione */}
-              <Route 
-                path="/favorites" 
-                element={
-                  <RequireAuth>
-                    <Favorites />
-                  </RequireAuth>
-                } 
-              />
-              <Route 
-                path="/profile" 
-                element={
-                  <RequireAuth>
-                    <Profile />
-                  </RequireAuth>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <RequireAuth>
-                    <Settings />
-                  </RequireAuth>
-                } 
-              />
-              
-              {/* Rotta di fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <Suspense fallback={<Loader />}>
+              <Routes>
+                {/* Rotte pubbliche */}
+                <Route path="/login" element={<Login redirect="/" />} />
+                <Route path="/signup" element={<Signup redirect="/" />} />
+                
+                {/* Rotte con accesso pubblico */}
+                <Route path="/" element={<Home />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/search/:query" element={<Search />} />
+                <Route path="/game/:id" element={<GameDetails />} />
+                <Route path="/categories" element={<Categories />} />
+                
+                {/* Rotte che richiedono autenticazione */}
+                <Route 
+                  path="/favorites" 
+                  element={
+                    <RequireAuth>
+                      <Favorites />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <RequireAuth>
+                      <Profile />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/settings" 
+                  element={
+                    <RequireAuth>
+                      <Settings />
+                    </RequireAuth>
+                  } 
+                />
+                
+                {/* Rotta di fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
           </main>
         </div>
       </BrowserRouter>

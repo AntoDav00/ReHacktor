@@ -48,8 +48,6 @@ export const getFavorites = async (userId) => {
   }
 
   try {
-    console.log('🔍 RECUPERO PREFERITI PER UTENTE:', userId);
-
     const q = query(
       collection(db, 'favorites'),
       where('userId', '==', userId)
@@ -58,11 +56,9 @@ export const getFavorites = async (userId) => {
     const querySnapshot = await getDocs(q);
     const favorites = querySnapshot.docs.map(doc => {
       const data = doc.data();
-      console.log('📦 PREFERITO TROVATO:', data);
       return data;
     });
 
-    console.log('📚 TOTALE PREFERITI:', favorites.length);
     return favorites;
   } catch (error) {
     console.error('❌ ERRORE NEL RECUPERO PREFERITI:', error);

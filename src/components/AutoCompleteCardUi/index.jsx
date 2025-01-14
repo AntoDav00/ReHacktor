@@ -5,16 +5,22 @@ import { useNavigate } from 'react-router-dom';
 const AutoCompleteCardUi = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  // eslint-disable-next-line no-unused-vars
   const [games, setGames] = useState([]);
   const [selectedItem, setSelectedItem] = useState(-1);
   const Navigate = useNavigate();
 
   useEffect(() => {
     const fetchGames = async () => {
-      const response = await fetch('https://api.rawg.io/api/games?key=' + import.meta.env.VITE_RAWG_API_KEY);
-      const data = await response.json();
-      setGames(data.games);
+      try {
+        const response = await fetch('/api/games?key=' + import.meta.env.VITE_RAWG_API_KEY);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setGames(data.games);
+      } catch (error) {
+        console.error('Errore nel recupero dei giochi:', error);
+      }
     };
     fetchGames();
   }, []);
@@ -24,8 +30,7 @@ const AutoCompleteCardUi = () => {
     setSearchQuery(searchQuery);
     if (searchQuery.length > 0) {
       try {
-        const url = `https://api.rawg.io/api/games?key=${import.meta.env.VITE_RAWG_API_KEY}&search=${encodeURI(searchQuery)}`;
-        const response = await fetch(url);
+        const response = await fetch(`/api/games?key=${import.meta.env.VITE_RAWG_API_KEY}&search=${encodeURI(searchQuery)}`);
         const data = await response.json();
         setSuggestions(data.results);
       } catch (error) {

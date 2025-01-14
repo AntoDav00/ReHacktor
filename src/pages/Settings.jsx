@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/prop-types */
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { FaUser, FaEnvelope, FaSpinner, FaEye, FaEyeSlash, FaCheckCircle, FaTimesCircle, FaLock, FaKey, FaTrash } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaSpinner, FaEye, FaEyeSlash, FaLock, FaKey, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import Loader from '../components/Loader';
 

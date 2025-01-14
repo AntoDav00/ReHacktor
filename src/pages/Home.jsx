@@ -6,7 +6,6 @@ import InfiniteScroll from '../components/Features/InfiniteScroll'
 import Loader from '../components/Loader'
 import GameCard from '../components/Game/GameCard'
 
-
 const Home = () => {
   const [searchParams] = useSearchParams();
   const [games, setGames] = useState([])
@@ -25,7 +24,19 @@ const Home = () => {
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const response = await fetch(`https://api.rawg.io/api/genres?key=${API_KEY}`);
+        const response = await fetch(`https://api.rawg.io/api/genres?key=${API_KEY}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
 
         const genresMap = {};
@@ -35,7 +46,7 @@ const Home = () => {
         });
         setGenres(genresMap);
       } catch (error) {
-        console.error('Error fetching genres:', error);
+        console.error('Errore durante il fetch dei generi:', error);
       }
     };
 
@@ -61,8 +72,20 @@ const Home = () => {
       if (filters.genre) url += `&genres=${filters.genre}`
       if (filters.sortBy !== 'relevance') url += `&ordering=${filters.sortBy}`
 
-      const response = await fetch(url)
-      const data = await response.json()
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
 
       if (pageNumber === 1) {
         setGames(data.results)
@@ -73,10 +96,10 @@ const Home = () => {
       setHasMore(data.next !== null)
       setLoading(false)
     } catch (error) {
-      console.error('Error fetching games:', error)
+      console.error('Errore nel recupero dei giochi:', error);
       setLoading(false)
     }
-  }
+  };
 
   useEffect(() => {
     setPage(1);

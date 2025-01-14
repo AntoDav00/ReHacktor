@@ -1,26 +1,21 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaCog, FaStar, FaComment, FaTrash, FaHeart, FaClock } from 'react-icons/fa';
+import { FaCog, FaStar, FaComment, FaTrash, FaClock } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { getFavorites, toggleFavorite } from '../utils/firebase';
-import { getComments } from '../utils/firebaseComments';
-import LoadingSkeleton from '../components/Features/LoadingSkeleton';
-import PlatformIcon from '../components/Features/PlatformIcon';
+import { getComments, deleteComment } from '../utils/firebaseComments';
 import Slider from 'react-slick';
 import { toast } from 'react-hot-toast';
 import CommentDeleteModal from '../components/Game/CommentDeleteModal';
 import GameCard from '../components/Game/GameCard';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 const RAWG_BASE_URL = 'https://api.rawg.io/api';
 const RAWG_API_KEY = import.meta.env.VITE_RAWG_API_KEY;
 
 const Profile = () => {
-  console.log('🚨 PROFILE COMPONENT RENDERING');
-
   const { user, loading: authLoading } = useAuth();
   const [favouriteGames, setFavouriteGames] = useState([]);
   const [recentlyAddedGames, setRecentlyAddedGames] = useState([]);
@@ -30,22 +25,6 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [screenshots, setScreenshots] = useState({});
   const [gameDetails, setGameDetails] = useState({});
-  const navigate = useNavigate();
-
-  // Debug completo dello stato
-  useEffect(() => {
-    console.log('🔍 PROFILE COMPONENT - STATO COMPLETO:', {
-      user: user ? {
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email
-      } : null,
-      authLoading,
-      loading,
-      favouriteGames: favouriteGames.length,
-      userComments: userComments.length
-    });
-  }, [user, authLoading, loading, favouriteGames, userComments]);
 
   // Immagine di default per l'avatar
   const defaultAvatar = user 
@@ -90,25 +69,15 @@ const Profile = () => {
   };
 
   const fetchAllGameDetails = async (favouriteGames) => {
-    console.log('🔍 INIZIO RECUPERO DETTAGLI GIOCHI', favouriteGames.length);
     const gameDetailsMap = {};
 
     for (const game of favouriteGames) {
-      // Estrai l'ID in modo più flessibile
-      const gameId = game.gameId || game.id || game.details?.id;
-
-      // Salta se non c'è un ID valido
-      if (!gameId) {
-        console.warn('⚠️ GAME SENZA ID VALIDO:', game);
-        continue;
-      }
-
-      // Salta se è una carta "Aggiungi Preferiti"
-      if (typeof gameId === 'string' && gameId.startsWith('add-favorite')) {
-        gameDetailsMap[gameId] = {
-          [gameId]: {
+      // Salta la chiamata API per AddFavoriteCard
+      if (typeof game.id === 'string' && game.id.startsWith('add-favorite')) {
+        gameDetailsMap[game.id] = {
+          [game.id]: {
             details: {
-              id: gameId,
+              id: game.id,
               name: 'Add Favorite',
               background_image: null,
               genres: [],
@@ -122,15 +91,15 @@ const Profile = () => {
 
       try {
         const [detailsResponse, screenshotsResponse] = await Promise.all([
-          axios.get(`${RAWG_BASE_URL}/games/${gameId}?key=${RAWG_API_KEY}`),
-          axios.get(`${RAWG_BASE_URL}/games/${gameId}/screenshots?key=${RAWG_API_KEY}`)
+          axios.get(`${RAWG_BASE_URL}/games/${game.id}?key=${RAWG_API_KEY}`),
+          axios.get(`${RAWG_BASE_URL}/games/${game.id}/screenshots?key=${RAWG_API_KEY}`)
         ]);
         
         const details = detailsResponse.data;
         const screenshotsData = screenshotsResponse.data.results.slice(0, 5);
         
-        gameDetailsMap[gameId] = { 
-          [gameId]: {
+        gameDetailsMap[game.id] = { 
+          [game.id]: {
             details: {
               id: details.id,
               name: details.name,
@@ -141,15 +110,12 @@ const Profile = () => {
             screenshots: screenshotsData
           }
         };
-        
-        console.log(`✅ DETTAGLI RECUPERATI PER GIOCO ${gameId}`);
       } catch (error) {
-        console.error(`❌ ERRORE RECUPERO DETTAGLI PER GIOCO ${gameId}:`, error);
-        gameDetailsMap[gameId] = null;
+        console.error(`Error fetching game details for ${game.id}:`, error);
+        gameDetailsMap[game.id] = null;
       }
     }
 
-    console.log('🏁 FINE RECUPERO DETTAGLI GIOCHI', Object.keys(gameDetailsMap).length);
     return gameDetailsMap;
   };
 
@@ -182,62 +148,7 @@ const Profile = () => {
     ]
   };
 
-  const screenshotSettings = {
-    dots: true,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 2000,
-    fade: true
-  };
 
-  const groupPlatforms = (platforms) => {
-    const groups = {
-      playstation: [],
-      xbox: [],
-      nintendo: [],
-      pc: [],
-      ios: [],
-      android: [],
-      linux: [],
-      mac: [],
-      web: [],
-      others: []
-    };
-
-    platforms.forEach(({ platform }) => {
-      if (platform.slug.includes('playstation')) {
-        groups.playstation.push(platform);
-      } else if (platform.slug.includes('xbox')) {
-        groups.xbox.push(platform);
-      } else if (platform.slug.includes('nintendo')) {
-        groups.nintendo.push(platform);
-      } else if (platform.slug === 'pc') {
-        groups.pc.push(platform);
-      } else if (platform.slug === 'ios') {
-        groups.ios.push(platform);
-      } else if (platform.slug === 'android') {
-        groups.android.push(platform);
-      } else if (platform.slug === 'linux') {
-        groups.linux.push(platform);
-      } else if (platform.slug === 'mac') {
-        groups.mac.push(platform);
-      } else if (platform.slug === 'web') {
-        groups.web.push(platform);
-      } else {
-        groups.others.push(platform);
-      }
-    });
-
-    return Object.entries(groups)
-      .filter(([_, platforms]) => platforms.length > 0)
-      .map(([key, platforms]) => ({
-        slug: key,
-        name: platforms.map(p => p.platform.name).join(', ')
-      }));
-  };
 
   const handleDeleteClick = (commentId) => {
     setCommentToDelete(commentId);
@@ -248,56 +159,24 @@ const Profile = () => {
     if (!commentToDelete) return;
     
     try {
+      // Elimina il commento dal database
+      await deleteComment(commentToDelete);
+      
       // Aggiorna lo stato locale rimuovendo il commento eliminato
       setUserComments(prevComments => 
         prevComments.filter(comment => comment.id !== commentToDelete)
       );
+      
+      // Chiudi il modal
       setShowDeleteModal(false);
       setCommentToDelete(null);
-      toast.success('Comment deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      toast.error('Failed to delete comment');
-    }
-  };
-
-  const handleRemoveFavorite = async (game) => {
-    try {
-      await toggleFavorite(user.uid, game.details);
-      // Aggiorna la lista dei preferiti
-      const updatedFavorites = favouriteGames.filter(
-        (favorite) => favorite.details.id !== game.details.id
-      );
-      setFavouriteGames(updatedFavorites);
       
-      // Aggiorna anche i giochi recenti se necessario
-      const updatedRecent = recentlyAddedGames.filter(
-        (recent) => recent.details.id !== game.details.id
-      );
-      setRecentlyAddedGames(updatedRecent);
-      
-      toast.success('Game removed from favorites!');
+      // Mostra notifica di successo
+      toast.success('Commento eliminato con successo!');
     } catch (error) {
-      console.error('Error removing favorite:', error);
-      toast.error('Failed to remove game from favorites');
+      console.error('Errore durante l\'eliminazione del commento:', error);
+      toast.error(error.message || 'Impossibile eliminare il commento');
     }
-  };
-
-  const handleScreenshotNavigation = (gameId, direction) => {
-    const gameScreenshots = screenshots[gameId] || [];
-    const currentIndex = screenshots[`${gameId}_index`] || 0;
-    
-    let newIndex;
-    if (direction === 'next') {
-      newIndex = (currentIndex + 1) % gameScreenshots.length;
-    } else {
-      newIndex = (currentIndex - 1 + gameScreenshots.length) % gameScreenshots.length;
-    }
-
-    setScreenshots(prev => ({
-      ...prev,
-      [`${gameId}_index`]: newIndex
-    }));
   };
 
   const getSliderSettings = (itemsCount) => ({
@@ -335,107 +214,125 @@ const Profile = () => {
     </Link>
   );
 
-  const formatTimeAgo = (timestamp) => {
-    if (!timestamp) return 'Unknown';
-    const addedDate = new Date(timestamp);
-    return addedDate.toLocaleDateString('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  // Funzione per fetchare tutti i dati con debug esteso
-  const fetchAllData = useCallback(async () => {
-    console.log('🚀 INIZIO FETCH DATI PROFILO');
-    try {
-      if (!user) {
-        console.warn('⚠️ NESSUN UTENTE, REINDIRIZZAMENTO A LOGIN');
-        navigate('/login');
-        return;
-      }
-
-      console.log('🔍 INIZIO RECUPERO DATI PER:', user.uid);
-
-      // Debug dei servizi Firebase
-      const favoritesPromise = getFavorites(user.uid);
-      const commentsPromise = getComments(user.uid);
-
-      const [favorites, comments] = await Promise.all([
-        favoritesPromise,
-        commentsPromise
-      ]);
-
-      console.log('📚 GIOCHI PREFERITI:', favorites);
-      console.log('💬 COMMENTI UTENTE:', comments);
-
-      setFavouriteGames(favorites);
-      setUserComments(comments);
-
-      // Recupero dettagli giochi
-      const gameDetailsMap = await fetchAllGameDetails(favorites);
-      console.log('🎮 DETTAGLI GIOCHI:', gameDetailsMap);
-      setGameDetails(gameDetailsMap);
-
-      setLoading(false);
-      console.log('✅ CARICAMENTO DATI PROFILO COMPLETATO');
-    } catch (error) {
-      console.error('❌ ERRORE NEL CARICAMENTO DATI PROFILO:', error);
-      toast.error('Impossibile caricare i dati del profilo');
-      setLoading(false);
-      navigate('/');
-    }
-  }, [user, navigate]);
-
-  // Gestione caricamento dati
   useEffect(() => {
-    console.log('🔄 STATO AUTENTICAZIONE CAMBIATO:', {
-      authLoading,
-      userPresente: !!user
-    });
+    const fetchAllData = async () => {
+      if (!user) return;
 
-    if (!authLoading && user) {
+      try {
+        setLoading(true);
+
+        // Fetch Favorites
+        const favorites = await getFavorites(user.uid);
+        
+        if (favorites && favorites.length > 0) {
+          // Sort favorites by date added
+          const sortedFavorites = [...favorites].sort(
+            (a, b) => b.dateAdded - a.dateAdded
+          );
+
+          // Fetch game details for favorites
+          const gamesWithDetails = await Promise.all(
+            sortedFavorites.map(async (favorite) => {
+              const details = await fetchGameDetails(favorite.gameId, true);
+              
+              return {
+                ...details,
+                gameId: favorite.gameId,
+                addedAt: favorite.addedAt || new Date().toISOString()
+              };
+            })
+          );
+
+          // Set recently added games (first 5 different from favorites)
+          const recentlyAdded = gamesWithDetails.filter(game => 
+            !favouriteGames.some(favGame => favGame.id === game.id)
+          ).slice(0, 5);
+          setRecentlyAddedGames(recentlyAdded);
+          
+          // Set favorite games, con un solo AddFavoriteCard se ci sono 3 o più giochi
+          setFavouriteGames(
+            gamesWithDetails.length < 3 
+              ? [
+                ...gamesWithDetails,
+                { id: 'add-favorite-1' },
+                { id: 'add-favorite-2' },
+                { id: 'add-favorite-3' }
+              ].slice(0, 6)
+              : [
+                ...gamesWithDetails,
+                { id: 'add-favorite-1' }
+              ].slice(0, 4)
+          );
+        } else {
+          // If no favorites, set default state with 3 AddFavoriteCard
+          setRecentlyAddedGames([]);
+          setFavouriteGames([
+            { id: 'add-favorite-1' },
+            { id: 'add-favorite-2' },
+            { id: 'add-favorite-3' }
+          ]);
+        }
+
+        // Fetch User Comments
+        const comments = await getComments(user.email);
+        const commentsWithGameDetails = await Promise.all(
+          comments.map(async (comment) => {
+            const gameDetails = await fetchGameDetails(comment.gameId, false);
+            return {
+              ...comment,
+              gameName: gameDetails?.name || 'Unknown Game',
+              gameImage: gameDetails?.background_image || null
+            };
+          })
+        );
+        setUserComments(commentsWithGameDetails);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!authLoading) {
       fetchAllData();
     }
-  }, [authLoading, user, fetchAllData]);
+  }, [user, authLoading]);
 
-  // Rendering condizionale con log
+  useEffect(() => {
+    const fetchGameDetailsAndScreenshots = async () => {
+      const gameDetailsMap = await fetchAllGameDetails(favouriteGames);
+      
+      setGameDetails(prev => ({...prev, ...Object.fromEntries(
+        Object.entries(gameDetailsMap).map(([gameId, data]) => [gameId, data[gameId].details])
+      )}));
+      
+      setScreenshots(prev => ({...prev, ...Object.fromEntries(
+        Object.entries(gameDetailsMap).map(([gameId, data]) => [gameId, data[gameId].screenshots])
+      )}));
+    };
+
+    if (favouriteGames.length > 0) {
+      fetchGameDetailsAndScreenshots();
+    }
+  }, [favouriteGames]);
+
   if (authLoading) {
-    console.log('⏳ CARICAMENTO AUTENTICAZIONE IN CORSO');
-    return (
-      <div className="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full border-8 border-gray-600 border-t-transparent animate-spin"></div>
-          <div className="w-24 h-24 rounded-full border-8 border-gray-700 border-t-transparent animate-spin absolute top-0 left-0 animate-ping"></div>
-        </div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   if (!user) {
-    console.log('🚫 NESSUN UTENTE, REINDIRIZZAMENTO');
     return (
-      <div className="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full border-8 border-gray-600 border-t-transparent animate-spin"></div>
-          <div className="w-24 h-24 rounded-full border-8 border-gray-700 border-t-transparent animate-spin absolute top-0 left-0 animate-ping"></div>
-        </div>
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-4">Please login to view your profile</h2>
+        <Link
+          to="/login"
+          className="inline-flex items-center px-6 py-3 rounded-full bg-gray-600 hover:bg-gray-700"
+        >
+          Login
+        </Link>
       </div>
     );
   }
-
-  if (loading) {
-    console.log('⏳ CARICAMENTO DATI PROFILO IN CORSO');
-    return (
-      <div className="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full border-8 border-gray-600 border-t-transparent animate-spin"></div>
-          <div className="w-24 h-24 rounded-full border-8 border-gray-700 border-t-transparent animate-spin absolute top-0 left-0 animate-ping"></div>
-        </div>
-      </div>
-    );
-  }
-
   const sortedRecentlyAddedGames = [...recentlyAddedGames].sort((a, b) => 
     new Date(b.addedToFavoritesTimestamp) - new Date(a.addedToFavoritesTimestamp)
   );
@@ -590,15 +487,13 @@ const Profile = () => {
                     </div>
                     <p className="text-white">{comment.text}</p>
                   </div>
-                  {user && user.email === comment.userId && (
-                    <button
-                      onClick={() => handleDeleteClick(comment.id)}
-                      className="text-red-500 hover:text-red-400 transition-colors duration-200 p-2"
-                      title="Delete comment"
-                    >
-                      <FaTrash />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleDeleteClick(comment.id)}
+                    className="text-red-500 hover:text-red-400 transition-colors duration-200 p-2"
+                    title="Delete comment"
+                  >
+                    <FaTrash />
+                  </button>
                 </div>
               </div>
             ))}

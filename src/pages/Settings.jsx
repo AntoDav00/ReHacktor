@@ -216,7 +216,7 @@ const Settings = () => {
       }
 
       toast.success('Account eliminato con successo');
-      navigate('/');
+      navigate('/'); // Reindirizza alla home
     } catch (error) {
       toast.error(error.message || 'Impossibile eliminare l\'account');
       setIsDeletingAccount(false);
@@ -418,7 +418,7 @@ const Settings = () => {
                 </button>
               </div>
 
-              <div className="flex space-x-4">
+              <div className="flex space-x-4 mt-4">
                 <button
                   type="submit"
                   disabled={!passwordsMatch || !newPassword}

@@ -7,22 +7,25 @@ import Loader from '../components/Loader'
 import GameCard from '../components/Game/GameCard'
 
 const Home = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
   const [genres, setGenres] = useState([])
+  const [platforms, setPlatforms] = useState([])
 
   // eslint-disable-next-line no-unused-vars
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const API_KEY = import.meta.env.VITE_RAWG_API_KEY
+  console.log('Valore API_KEY:', API_KEY);
+  console.log('import.meta.env completo:', import.meta.env);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [filters, setFilters] = useState({})
 
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const response = await fetch(`https://api.rawg.io/api/genres?key=${API_KEY}`, {
+        const response = await fetch(`/api/genres?key=${API_KEY}`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -52,6 +55,30 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    const fetchPlatforms = async () => {
+      try {
+        const response = await fetch(`/api/platforms?key=${API_KEY}&page_size=100`);
+        
+        if (!response.ok) {
+          console.error('Errore nel fetch delle piattaforme:', response.status, response.statusText);
+          return;
+        }
+
+        const data = await response.json();
+        const platformsMap = {};
+        data.results.forEach(platform => {
+          platformsMap[platform.id.toString()] = platform.name;
+        });
+        setPlatforms(platformsMap);
+      } catch (error) {
+        console.error('Errore durante il fetch delle piattaforme:', error);
+      }
+    };
+
+    fetchPlatforms();
+  }, []);
+
+  useEffect(() => {
     const genreFromUrl = searchParams.get('genre');
     if (genreFromUrl) {
       setFilters(prev => ({
@@ -64,38 +91,30 @@ const Home = () => {
   const fetchGames = async (pageNumber) => {
     setLoading(true)
     try {
-      let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${pageNumber}&page_size=12`
+      let url = `/api/games?key=${API_KEY}&page=${pageNumber}&page_size=12`
 
       if (filters.platform) url += `&platforms=${filters.platform}`
       if (filters.genre) url += `&genres=${filters.genre}`
-      if (filters.sortBy !== 'relevance') url += `&ordering=${filters.sortBy}`
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-
+      const response = await fetch(url);
+      
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('Errore nel fetch dei giochi:', response.status, response.statusText, errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-
-      if (pageNumber === 1) {
-        setGames(data.results)
-      } else {
-        setGames(prev => [...prev, ...data.results])
-      }
-
-      setHasMore(data.next !== null)
-      setLoading(false)
+      
+      setGames(prevGames => 
+        pageNumber === 1 ? data.results : [...prevGames, ...data.results]
+      );
+      
+      setHasMore(data.next !== null);
+      setLoading(false);
     } catch (error) {
       console.error('Errore nel recupero dei giochi:', error);
-      setLoading(false)
+      setLoading(false);
     }
   };
 
@@ -112,6 +131,13 @@ const Home = () => {
       })
     }
   }
+
+  const resetFilters = () => {
+    setFilters({});
+    searchParams.delete('genre');
+    searchParams.delete('platform');
+    setSearchParams(searchParams);
+  };
 
   if (loading && games.length === 0) {
     return <Loader />
@@ -228,10 +254,15 @@ const Home = () => {
                 <label className="block text-sm font-medium mb-2">Platform</label>
                 <select
                   className="w-full bg-gray-800 rounded-lg p-2 border border-gray-700"
-                  value={filters.platform}
+                  value={filters.platform || ''}
                   onChange={(e) => setFilters(prev => ({ ...prev, platform: e.target.value }))}
                 >
                   <option value="">All Platforms</option>
+                  {Object.entries(platforms).map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -281,6 +312,12 @@ const Home = () => {
                 className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all"
               >
                 Apply Filters
+              </button>
+              <button
+                onClick={resetFilters}
+                className="flex-1 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                Reset Filters
               </button>
             </div>
           </motion.div>

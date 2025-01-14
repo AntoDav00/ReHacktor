@@ -148,8 +148,6 @@ const Profile = () => {
     ]
   };
 
-
-
   const handleDeleteClick = (commentId) => {
     setCommentToDelete(commentId);
     setShowDeleteModal(true);
@@ -213,6 +211,7 @@ const Profile = () => {
       </div>
     </Link>
   );
+
 
   useEffect(() => {
     const fetchAllData = async () => {

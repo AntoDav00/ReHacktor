@@ -131,7 +131,7 @@ const Home = () => {
       console.log('API Key:', import.meta.env.VITE_RAWG_API_KEY); // Verifica chiave API
       console.log('Environment:', import.meta.env.MODE); // Verifica ambiente
       
-      let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${pageNumber}&page_size=50&ordering=-rating`;
+      let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${pageNumber}&page_size=50`;
 
       if (filters.platform) url += `&platforms=${filters.platform}`;
       if (filters.genre) url += `&genres=${filters.genre}`;

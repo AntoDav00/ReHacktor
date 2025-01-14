@@ -34,6 +34,7 @@ const Home = () => {
         });
 
         if (!response.ok) {
+          // eslint-disable-next-line no-unused-vars
           const errorText = await response.text();
           throw new Error(`HTTP error! status: ${response.status}`);
         }

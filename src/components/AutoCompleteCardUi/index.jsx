@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const AutoCompleteCardUi = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [games, setGames] = useState([]);
   const [selectedItem, setSelectedItem] = useState(-1);
   const Navigate = useNavigate();

@@ -16,9 +16,8 @@ const Home = () => {
   // eslint-disable-next-line no-unused-vars
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+  // eslint-disable-next-line no-unused-vars
   const API_KEY = import.meta.env.VITE_RAWG_API_KEY
-  console.log('Valore API_KEY:', API_KEY);
-  console.log('import.meta.env completo:', import.meta.env);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [filters, setFilters] = useState({})
 
@@ -34,8 +33,6 @@ const Home = () => {
         });
 
         if (!response.ok) {
-          // eslint-disable-next-line no-unused-vars
-          const errorText = await response.text();
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
@@ -61,8 +58,7 @@ const Home = () => {
         const response = await fetch(`https://api.rawg.io/api/platforms?key=${API_KEY}&page_size=100`);
         
         if (!response.ok) {
-          console.error('Errore nel fetch delle piattaforme:', response.status, response.statusText);
-          return;
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -100,8 +96,6 @@ const Home = () => {
       const response = await fetch(url);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Errore nel fetch dei giochi:', response.status, response.statusText, errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -310,7 +304,7 @@ const Home = () => {
                   fetchGames(1);
                   setIsFilterModalOpen(false);
                 }}
-                className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all"
+                className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all !important"
               >
                 Apply Filters
               </button>

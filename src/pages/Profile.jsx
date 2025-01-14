@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import CommentDeleteModal from '../components/Game/CommentDeleteModal';
 import GameCard from '../components/Game/GameCard';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const RAWG_BASE_URL = 'https://api.rawg.io/api';
 const RAWG_API_KEY = import.meta.env.VITE_RAWG_API_KEY;
@@ -25,6 +26,27 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [screenshots, setScreenshots] = useState({});
   const [gameDetails, setGameDetails] = useState({});
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const SettingsIcon = () => (
+    <Link
+      to="/settings"
+      className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
+      aria-label="Settings"
+    >
+      <FaCog className="w-6 h-6 text-gray-400" />
+    </Link>
+  );
 
   // Immagine di default per l'avatar
   const defaultAvatar = user 
@@ -148,6 +170,13 @@ const Profile = () => {
     ]
   };
 
+  const getSliderSettings = (itemsCount) => ({
+    ...settings,
+    infinite: itemsCount > 3,
+    slidesToShow: Math.min(3, itemsCount),
+    slidesToScroll: 1
+  });
+
   const handleDeleteClick = (commentId) => {
     setCommentToDelete(commentId);
     setShowDeleteModal(true);
@@ -177,13 +206,6 @@ const Profile = () => {
     }
   };
 
-  const getSliderSettings = (itemsCount) => ({
-    ...settings,
-    infinite: itemsCount > 3,
-    slidesToShow: Math.min(3, itemsCount),
-    slidesToScroll: 1
-  });
-
   const AddFavoriteCard = () => (
     <Link to="/" className="block h-full">
       <div className="relative bg-gray-800 rounded-lg overflow-hidden h-full cursor-pointer">
@@ -212,6 +234,58 @@ const Profile = () => {
     </Link>
   );
 
+  const renderFavoriteGamesContent = () => {
+    return (
+      <div>
+        {sortedFavouriteGames.length === 0 ? (
+          <div className="px-4 -mx-4">
+            <Slider 
+              {...getSliderSettings(3)}
+              className="space-x-4" 
+            >
+              {[1, 2, 3].map((_, index) => (
+                <div key={`add-favorite-${index}`} className="px-2">
+                  <div className="transition-transform duration-200">
+                    <AddFavoriteCard />
+                  </div>
+                </div>
+              ))}
+            </Slider>
+          </div>
+        ) : (
+          <div className="px-4 -mx-4">
+            <Slider 
+              {...getSliderSettings(sortedFavouriteGames.length + 1)}
+              className="space-x-4" 
+            >
+              {[...sortedFavouriteGames, { id: 'add-favorite-1' }].map((game) => {
+                const isAddFavoriteCard = game && typeof game.id === 'string' && game.id.includes('add-favorite');
+                return (
+                  <div key={game.id || Math.random()} className="px-2">
+                    <div className="transition-transform duration-200">
+                      {isAddFavoriteCard ? (
+                        <AddFavoriteCard />
+                      ) : (
+                        <GameCard
+                          game={game}
+                          screenshots={screenshots}
+                          toggleFavorite={toggleFavorite}
+                          user={user}
+                          setFavouriteGames={setFavouriteGames}
+                          favouriteGames={favouriteGames}
+                          gameDetails={gameDetails}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </Slider>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -254,9 +328,8 @@ const Profile = () => {
               ? [
                 ...gamesWithDetails,
                 { id: 'add-favorite-1' },
-                { id: 'add-favorite-2' },
-                { id: 'add-favorite-3' }
-              ].slice(0, 6)
+                { id: 'add-favorite-2' }
+              ].slice(0, 3)
               : [
                 ...gamesWithDetails,
                 { id: 'add-favorite-1' }
@@ -319,19 +392,6 @@ const Profile = () => {
     return <div>Loading...</div>;
   }
 
-  if (!user) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">Please login to view your profile</h2>
-        <Link
-          to="/login"
-          className="inline-flex items-center px-6 py-3 rounded-full bg-gray-600 hover:bg-gray-700"
-        >
-          Login
-        </Link>
-      </div>
-    );
-  }
   const sortedRecentlyAddedGames = [...recentlyAddedGames].sort((a, b) => 
     new Date(b.addedToFavoritesTimestamp) - new Date(a.addedToFavoritesTimestamp)
   );
@@ -343,39 +403,30 @@ const Profile = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Profile Header */}
-      <div className="mb-12 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-800">
-            {user?.photoURL ? (
-              <img 
-                src={user.photoURL} 
-                alt={username}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = defaultAvatar
-                }}
-              />
-            ) : (
-              <img 
-                src={defaultAvatar} 
-                alt={username}
-                className="w-full h-full object-cover"
-              />
-            )}
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">{username}</h1>
-            <p className="text-gray-400">{user?.email}</p>
-          </div>
+      <div className="mb-12 flex flex-col items-center justify-center space-y-2">
+        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-800 mb-2">
+          {user?.photoURL ? (
+            <img 
+              src={user.photoURL} 
+              alt={username}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.src = defaultAvatar
+              }}
+            />
+          ) : (
+            <img 
+              src={defaultAvatar} 
+              alt={username}
+              className="w-full h-full object-cover"
+            />
+          )}
         </div>
-        <div className="flex items-center justify-center space-x-4">
-          <Link 
-            to="/settings" 
-            className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors duration-200"
-          >
-            <FaCog className="w-6 h-6 text-gray-400" />
-          </Link>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white">{username}</h2>
+          <p className="text-gray-400">{user?.email}</p>
         </div>
+        <SettingsIcon />
       </div>
 
       {/* Favorites Section */}
@@ -384,36 +435,7 @@ const Profile = () => {
           <FaStar className="text-yellow-500" />
           Favorite Games
         </h2>
-
-        <div className="px-4 -mx-4">
-          <Slider 
-            {...getSliderSettings(sortedFavouriteGames.length === 0 ? 3 : sortedFavouriteGames.length)}
-            className="space-x-4" 
-          >
-            {sortedFavouriteGames.map((game) => {
-              const isAddFavoriteCard = game && typeof game.id === 'string' && game.id.includes('add-favorite');
-              return (
-                <div key={game.id || Math.random()} className="px-2">
-                  <div className="transition-transform duration-200">
-                    {isAddFavoriteCard ? (
-                      <AddFavoriteCard />
-                    ) : (
-                      <GameCard
-                        game={game}
-                        screenshots={screenshots}
-                        toggleFavorite={toggleFavorite}
-                        user={user}
-                        setFavouriteGames={setFavouriteGames}
-                        favouriteGames={favouriteGames}
-                        gameDetails={gameDetails}
-                      />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </Slider>
-        </div>
+        {renderFavoriteGamesContent()}
       </div>
 
       {/* Recently Added Games Section */}

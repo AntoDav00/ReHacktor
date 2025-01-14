@@ -398,7 +398,7 @@ const Settings = () => {
               </div>
 
               <div className="relative">
-                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300 mb-2 mt-2">
                   Confirm New Password
                 </label>
                 <input

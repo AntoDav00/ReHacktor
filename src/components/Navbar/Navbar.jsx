@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useState, useEffect } from 'react'
@@ -11,13 +12,13 @@ const Navbar = ({ onResetFilters }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { user, logout } = useAuth()
-  
+
   // Usa l'username dal signup o un fallback
   const username = user?.displayName || user?.email?.split('@')[0] || 'User'
 
   // Immagine di default per l'avatar
-  const defaultAvatar = user 
-    ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}` 
+  const defaultAvatar = user
+    ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`
     : 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
 
   useEffect(() => {
@@ -57,8 +58,8 @@ const Navbar = ({ onResetFilters }) => {
   }
 
   return (
-    <nav className="bg-gray-800/50 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-700">
-      <div className="container mx-auto px-4">
+    <nav className="bg-gray-800/90 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-700">
+      <div className="container mx-auto px-4 ">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/"
@@ -89,8 +90,8 @@ const Navbar = ({ onResetFilters }) => {
                 >
                   {/* Avatar con immagine default */}
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800">
-                    <img 
-                      src={user?.photoURL || defaultAvatar} 
+                    <img
+                      src={user?.photoURL || defaultAvatar}
                       alt={username}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -100,9 +101,8 @@ const Navbar = ({ onResetFilters }) => {
                   </div>
                   <span className="text-sm font-medium">{username}</span>
                   <svg
-                    className={`w-5 h-5 transition-transform duration-200 ${
-                      isOpen ? 'transform rotate-180' : ''
-                    }`}
+                    className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''
+                      }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -139,9 +139,9 @@ const Navbar = ({ onResetFilters }) => {
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors duration-200"
+                      className="px-4 py-2 text-left hover:bg-gray-700 rounded-lg text-red-400"
                     >
-                      Logout
+                      Sign Out
                     </button>
                   </div>
                 )}
@@ -196,6 +196,15 @@ const Navbar = ({ onResetFilters }) => {
               >
                 Favorites
               </Link>
+              {user && (
+                <Link
+                  to="/profile"
+                  className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-white"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+              )}
               {user ? (
                 <button
                   onClick={handleLogout}
@@ -206,7 +215,7 @@ const Navbar = ({ onResetFilters }) => {
               ) : (
                 <Link
                   to="/login"
-                  className="px-4 py-2 bg-orange-500 hover:bg-orange-700 rounded-lg transition-colors text-white font-bold"
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-colors text-white font-bold"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Login

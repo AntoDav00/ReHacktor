@@ -11,7 +11,6 @@ const Home = () => {
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
   const [genres, setGenres] = useState([])
-  const [platforms, setPlatforms] = useState([])
 
   // eslint-disable-next-line no-unused-vars
   const [page, setPage] = useState(1)
@@ -20,67 +19,10 @@ const Home = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [filters, setFilters] = useState({})
 
-
-
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        console.log('API Key:', import.meta.env.VITE_RAWG_API_KEY); // Verifica chiave API
-        console.log('Environment:', import.meta.env.MODE); // Verifica ambiente
-
-        const url = `https://api.rawg.io/api/genres?key=${API_KEY}`;
-        console.log('Full Genres URL:', url);
-
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Origin': window.location.origin // Aggiungi header CORS
-          }
-        });
-
-        console.log('Response status:', response.status); // Log dello stato della risposta
-        console.log('Response headers:', response.headers); // Log degli header della risposta
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Detailed error:', {
-            status: response.status,
-            statusText: response.statusText,
-            errorText: errorText
-          });
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Genres data:', data);
-
-        const genresMap = {};
-        data.results.forEach(genre => {
-          genresMap[genre.id.toString()] = genre.name;
-          genresMap[genre.slug] = genre.name;
-        });
-        console.log('Genres map:', genresMap);
-        setGenres(genresMap);
-      } catch (error) {
-        console.error('Errore durante il fetch dei generi:', {
-          message: error.message,
-          stack: error.stack
-        });
-      }
-    };
-
-    fetchGenres();
-  }, []);
-
-  useEffect(() => {
-    const fetchPlatforms = async () => {
-      try {
-        const platformsUrl = `https://api.rawg.io/api/platforms?key=${API_KEY}&page_size=100`;
-        console.log('Full Platforms URL:', platformsUrl);
-
-        const response = await fetch(platformsUrl, {
+        const response = await fetch(`https://api.rawg.io/api/genres?key=${API_KEY}`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -90,29 +32,23 @@ const Home = () => {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Detailed platforms error:', {
-            status: response.status,
-            statusText: response.statusText,
-            errorText: errorText
-          });
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        const platformsMap = {};
-        data.results.forEach(platform => {
-          platformsMap[platform.id.toString()] = platform.name;
+
+        const genresMap = {};
+        data.results.forEach(genre => {
+          genresMap[genre.id.toString()] = genre.name;
+          genresMap[genre.slug] = genre.name;
         });
-        setPlatforms(platformsMap);
+        setGenres(genresMap);
       } catch (error) {
-        console.error('Errore durante il fetch delle piattaforme:', {
-          message: error.message,
-          stack: error.stack
-        });
+        console.error('Errore durante il fetch dei generi:', error);
       }
     };
 
-    fetchPlatforms();
+    fetchGenres();
   }, []);
 
   useEffect(() => {
@@ -128,34 +64,22 @@ const Home = () => {
   const fetchGames = async (pageNumber) => {
     setLoading(true)
     try {
-      console.log('API Key:', import.meta.env.VITE_RAWG_API_KEY); // Verifica chiave API
-      console.log('Environment:', import.meta.env.MODE); // Verifica ambiente
-      
-      let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${pageNumber}&page_size=50`;
+      let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${pageNumber}&page_size=12`
 
-      if (filters.platform) url += `&platforms=${filters.platform}`;
-      if (filters.genre) url += `&genres=${filters.genre}`;
-      
-      console.log('Full Games URL:', url);
+      if (filters.platform) url += `&platforms=${filters.platform}`
+      if (filters.genre) url += `&genres=${filters.genre}`
+      if (filters.sortBy !== 'relevance') url += `&ordering=${filters.sortBy}`
 
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Origin': window.location.origin // Aggiungi header CORS
+          'Content-Type': 'application/json'
         }
       });
 
-      console.log('Response status:', response.status); // Log dello stato della risposta
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Detailed error:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText: errorText
-        });
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -170,10 +94,7 @@ const Home = () => {
       setHasMore(data.next !== null)
       setLoading(false)
     } catch (error) {
-      console.error('Errore nel recupero dei giochi:', {
-        message: error.message,
-        stack: error.stack
-      });
+      console.error('Errore nel recupero dei giochi:', error);
       setLoading(false)
     }
   };
@@ -181,32 +102,7 @@ const Home = () => {
   useEffect(() => {
     setPage(1);
     fetchGames(1);
-    
-    // Imposta il flag di caricamento iniziale se non è già stato fatto
-    if (!localStorage.getItem('gamesInitialLoad')) {
-      localStorage.setItem('gamesInitialLoad', 'true');
-    }
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
-
-  useEffect(() => {
-    if (games.length > 0) {
-      localStorage.removeItem('gamesInitialLoad');
-    }
-  }, [games]);
-
-  // Loader per il caricamento iniziale
-  if (localStorage.getItem('gamesInitialLoad') === 'true') {
-    return (
-      <div className="fixed inset-0 bg-gray-900 z-50 flex justify-center items-center">
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full border-8 border-purple-400 border-t-transparent animate-spin"></div>
-          <div className="w-24 h-24 rounded-full border-8 border-pink-400 border-t-transparent animate-spin absolute top-0 left-0 animate-ping"></div>
-        </div>
-      </div>
-    );
-  }
 
   const loadMore = () => {
     if (!loading) {
@@ -275,7 +171,6 @@ const Home = () => {
           </div>
         </motion.div>
       )}
-
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
@@ -337,11 +232,6 @@ const Home = () => {
                   onChange={(e) => setFilters(prev => ({ ...prev, platform: e.target.value }))}
                 >
                   <option value="">All Platforms</option>
-                  {Object.entries(platforms).map(([id, name]) => (
-                    <option key={id} value={id}>
-                      {name}
-                    </option>
-                  ))}
                 </select>
               </div>
 
@@ -350,15 +240,7 @@ const Home = () => {
                 <select
                   className="w-full bg-gray-800 rounded-lg p-2 border border-gray-700"
                   value={filters.genre}
-                  onChange={(e) => {
-                    console.log('Selected genre:', e.target.value);
-                    console.log('Genres map:', genres);
-                    setFilters(prev => {
-                      const newFilters = { ...prev, genre: e.target.value };
-                      console.log('New filters:', newFilters);
-                      return newFilters;
-                    });
-                  }}
+                  onChange={(e) => setFilters(prev => ({ ...prev, genre: e.target.value }))}
                 >
                   <option value="">All Genres</option>
                   {Object.entries(genres).map(([id, name]) => (
@@ -408,4 +290,4 @@ const Home = () => {
   )
 }
 
-export default Home 
+export default Home

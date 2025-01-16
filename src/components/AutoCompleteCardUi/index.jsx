@@ -13,12 +13,12 @@ const AutoCompleteCardUi = () => {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const response = await fetch('/api/games?key=' + import.meta.env.VITE_RAWG_API_KEY);
+        const response = await fetch(`https://api.rawg.io/api/games?key=${import.meta.env.VITE_RAWG_API_KEY}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setGames(data.games);
+        setGames(data.results);
       } catch (error) {
         console.error('Errore nel recupero dei giochi:', error);
       }
@@ -31,7 +31,10 @@ const AutoCompleteCardUi = () => {
     setSearchQuery(searchQuery);
     if (searchQuery.length > 0) {
       try {
-        const response = await fetch(`/api/games?key=${import.meta.env.VITE_RAWG_API_KEY}&search=${encodeURI(searchQuery)}`);
+        const response = await fetch(`https://api.rawg.io/api/games?key=${import.meta.env.VITE_RAWG_API_KEY}&search=${encodeURI(searchQuery)}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         setSuggestions(data.results);
       } catch (error) {

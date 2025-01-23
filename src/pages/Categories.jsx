@@ -44,7 +44,7 @@ const Categories = () => {
             transition={{ delay: index * 0.1 }}
           >
             <Link
-              to={`/category/${genre.slug}`}
+              to={`/search?genre=${genre.slug}`}
               className="block h-80 rounded-2xl overflow-hidden relative group"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-700 opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
